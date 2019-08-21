@@ -1,0 +1,41 @@
+complexity:
+    ComplexCondition:
+        threshold: 6
+
+exceptions:
+    InstanceOfCheckForException:
+        active: true
+    RethrowCaughtException:
+        active: true
+    ReturnFromFinally:
+        active: true
+    SwallowedException:
+        active: false
+    ThrowingExceptionFromFinally:
+        active: true
+    ThrowingExceptionsWithoutMessageOrCause:
+        active: true
+    ThrowingNewInstanceOfSameException:
+        active: true
+
+potential-bugs:
+    UselessPostfixExpression:
+        active: true
+
+style:
+    CollapsibleIfStatements:
+        active: true
+    NestedClassesVisibility:
+        active: true
+    NewLineAtEndOfFile:
+        active: false
+    MayBeConst:
+        active: true
+    SpacingBetweenPackageAndImports:
+        active: true
+    UtilityClassWithPublicConstructor:
+        active: true
+    LibraryCodeMustSpecifyReturnType:
+        active: true
+    ForbiddenComment:
+        active: false
