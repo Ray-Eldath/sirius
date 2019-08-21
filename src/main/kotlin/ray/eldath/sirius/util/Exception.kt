@@ -8,7 +8,7 @@ sealed class SiriusValidationException {
 }
 
 object ExceptionAssembler {
-    fun assembleMissingException(
+    fun assembleJsonObjectMEE( // MEE stands for Missing required Element Exception
         element: BaseValidationPredicate,
         key: String,
         depth: Int

@@ -1,7 +1,22 @@
-## sirius
+# sirius
 
 :construction: (WIP) Type-safe, lightweight JSON validator with Kotlin DSL.
 
-### // TODO
+> Still work in progress, star & watch for further information information? :-)
 
-Still work in progress, star & watch for further information information? :-)
+### TODO
+
+**Italicized entries indicate that they are WIP now.**
+
+ - [ ] Validation DSL
+   - [ ] Number
+   - [ ] Boolean
+   - [ ] *String*
+   - [ ] *JSON Object*
+   - [ ] JSON Array
+   - [ ] `null`
+ - [ ] Documentation for API with [Dokka](https://github.com/Kotlin/dokka)
+ - [ ] Validation configuration
+ - [ ] JUnit test
+ - [ ] Continuous Integration (CI)
+ - [ ] (?) SemVer & SemRelease

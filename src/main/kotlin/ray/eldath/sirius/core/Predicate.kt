@@ -36,7 +36,7 @@ data class JsonObjectValidationPredicate(
     private fun testChildren(obj: JSONObject, map: Map<String, BaseValidationPredicate>): Boolean =
         map.all { (key, value) ->
             if (!obj.has(key))
-                if (value.required) throw ExceptionAssembler.assembleMissingException(
+                if (value.required) throw ExceptionAssembler.assembleJsonObjectMEE(
                     value,
                     key,
                     depth
