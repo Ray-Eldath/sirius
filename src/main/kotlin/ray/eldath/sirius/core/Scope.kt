@@ -2,8 +2,12 @@
 
 package ray.eldath.sirius.core
 
-class JsonObjectValidationScope(private val depth: Int) : RequireOption(),
-    ValidationScope {
+import ray.eldath.sirius.type.BaseValidationPredicate
+import ray.eldath.sirius.type.Predicate
+import ray.eldath.sirius.type.RequireOption
+import ray.eldath.sirius.type.ValidationScope
+
+class JsonObjectValidationScope(private val depth: Int) : RequireOption(), ValidationScope {
     private val children = mutableMapOf<String, BaseValidationPredicate>()
 
     var length = 0..Int.MAX_VALUE
@@ -25,8 +29,7 @@ class JsonObjectValidationScope(private val depth: Int) : RequireOption(),
         )
 }
 
-class StringValidationScope(private val depth: Int) : RequireOption(),
-    ValidationScope {
+class StringValidationScope(private val depth: Int) : RequireOption(), ValidationScope {
     private val tests = mutableListOf<Predicate<String>>()
 
     var length = 0..Int.MAX_VALUE
@@ -47,8 +50,7 @@ class StringValidationScope(private val depth: Int) : RequireOption(),
                 minLength == 0 && maxLength != Int.MAX_VALUE
             )
                 minLength..maxLength
-            else
-                0..Int.MAX_VALUE
+            else 0..Int.MAX_VALUE
         return StringValidationPredicate(
             required = this.isRequired,
             lengthRange = lengthRange,

@@ -1,8 +1,6 @@
 package ray.eldath.sirius.util
 
-import ray.eldath.sirius.core.BaseValidationPredicate
-import ray.eldath.sirius.core.JsonObjectValidationPredicate
-import ray.eldath.sirius.core.StringValidationPredicate
+import ray.eldath.sirius.type.BaseValidationPredicate
 import ray.eldath.sirius.util.SiriusValidationException.MissingRequiredElementException
 
 sealed class SiriusValidationException {
@@ -15,7 +13,7 @@ object ExceptionAssembler {
         key: String,
         depth: Int
     ): MissingRequiredElementException {
-        val t = key + "[" + matchType(element) + "]"
+        val t = key + "[" + PredicateType.fromPredicate(element).displayName + "]"
         return MissingRequiredElementException("[JsonObject] missing required element $t at ${assembleDepth(depth)}")
     }
 
@@ -23,10 +21,4 @@ object ExceptionAssembler {
         if (depth == 0)
             "[root]"
         else "[$depth] foot from root"
-
-    private fun matchType(predicate: BaseValidationPredicate): String =
-        when (predicate) {
-            is StringValidationPredicate -> "string"
-            is JsonObjectValidationPredicate -> "JsonObject"
-        }
 }

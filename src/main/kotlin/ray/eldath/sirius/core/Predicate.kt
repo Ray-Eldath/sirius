@@ -1,32 +1,10 @@
 package ray.eldath.sirius.core
 
 import org.json.JSONObject
+import ray.eldath.sirius.type.BaseValidationPredicate
+import ray.eldath.sirius.type.Predicate
 import ray.eldath.sirius.util.ExceptionAssembler
 import ray.eldath.sirius.util.Util
-
-@TopClassValidationScopeMarker
-interface ValidationScope
-
-abstract class RequireOption {
-    var isRequired = false
-        private set
-
-    val required: Unit
-        get() = run { isRequired = true }
-}
-
-@DslMarker
-annotation class TopClassValidationScopeMarker
-
-typealias BaseValidationPredicate = ValidationPredicate<*>
-
-sealed class ValidationPredicate<T>(
-    open val required: Boolean = false,
-    open val tests: List<Predicate<T>> = emptyList(),
-    open val depth: Int
-) {
-    abstract fun test(value: T): Boolean
-}
 
 data class StringValidationPredicate(
     val lengthRange: IntRange = 0..Int.MAX_VALUE,
@@ -73,4 +51,11 @@ data class JsonObjectValidationPredicate(
     override fun toString(): String = Util.reflectionToStringWithStyle(this)
 }
 
-typealias Predicate<T> = T.() -> Boolean
+// left due to sealed class's constrain
+sealed class ValidationPredicate<T>(
+    open val required: Boolean = false,
+    open val tests: List<Predicate<T>> = emptyList(),
+    open val depth: Int
+) {
+    abstract fun test(value: T): Boolean
+}
