@@ -18,8 +18,9 @@ object Test {
             "cde" jsonObject {
                 required
 
-                "123" boolean {
-                    expected = true
+                "123" string {
+                    required
+                    maxLength = 4
                 }
             }
         }
@@ -28,7 +29,7 @@ object Test {
             {
                 "abc": "1234567890",
                 "cde": {
-                    "123": false
+                    "123": "12345"
                 }
             }
         """.trimIndent()

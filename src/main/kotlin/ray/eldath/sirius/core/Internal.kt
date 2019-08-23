@@ -16,5 +16,3 @@ object PredicateBuildInterceptor {
         return inst.apply(initializer).build()
     }
 }
-
-object TopPredicateInterceptor

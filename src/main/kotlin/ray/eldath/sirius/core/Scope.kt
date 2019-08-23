@@ -74,7 +74,7 @@ class StringValidationScope(private val depth: Int) : ValidationScope<StringVali
                 minLength != 0 && maxLength == max ||
                 minLength == 0 && maxLength != max
             )
-                maxRange
+                minLength..maxLength
             else maxRange
         return StringValidationPredicate(
             required = this.isRequired,

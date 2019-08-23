@@ -20,20 +20,23 @@ internal object ExceptionAssembler {
         fun equal(constrain: EqualConstrain<*>, element: AnyValidationPredicate, key: String, depth: Int) =
             VFE(
                 assembleJsonObjectK("equal", element, key, depth) +
-                        "\n trace: ${constrain.actual} should be ${constrain.expected}"
+                        "\n trace: ${constrain.actual}(actual) should be ${constrain.expected}(expected)"
             )
 
         fun contain(constrain: ContainConstrain<*>, element: AnyValidationPredicate, key: String, depth: Int) =
             VFE(
                 assembleJsonObjectK("contain", element, key, depth) +
-                        "\ntrace: ${constrain.element} should be contained in ${constrain.container}"
+                        "\ntrace: ${constrain.element}(actual) should be contained in ${constrain.container}(expected)"
             )
 
-        fun range(constrain: RangeConstrain<*>, element: AnyValidationPredicate, key: String, depth: Int) =
-            VFE(
+        fun range(constrain: RangeConstrain<*>, element: AnyValidationPredicate, key: String, depth: Int): VFE {
+            val actual = constrain.actual
+            val header = if (actual.start == actual.endInclusive) actual.start.toString() else actual.toString()
+            return VFE(
                 assembleJsonObjectK("range", element = element, key = key, depth = depth) +
-                        "\ntrace: ${constrain.actual}(actual) should smaller than${constrain.bigger}(excepted)"
+                        "\ntrace: $header(actual) should be contained in ${constrain.bigger}(expected)"
             )
+        }
 
         // STOPSHIP: incomplete support for test{ }
         fun lambda(constrain: LambdaConstrain<*>, element: AnyValidationPredicate, key: String, depth: Int) =
