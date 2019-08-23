@@ -20,6 +20,15 @@ data class StringValidationPredicate(
     override fun toString(): String = Util.reflectionToStringWithStyle(this)
 }
 
+data class BooleanValidationPredicate(
+    val expected: Boolean,
+    override val required: Boolean,
+    override val depth: Int
+) : ValidationPredicate<Boolean>(required = required, depth = depth) {
+
+    override fun test(value: Boolean): Boolean = expected == value
+}
+
 data class JsonObjectValidationPredicate(
     val lengthRange: IntRange = 0..Int.MAX_VALUE,
     val children: Map<String, BaseValidationPredicate> = emptyMap(),
@@ -45,6 +54,7 @@ data class JsonObjectValidationPredicate(
                 when (value) {
                     is StringValidationPredicate -> value.test(obj.getString(key))
                     is JsonObjectValidationPredicate -> value.test(obj.getJSONObject(key))
+                    is BooleanValidationPredicate -> value.test(obj.getBoolean(key))
                 }
         }
 

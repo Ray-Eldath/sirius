@@ -1,56 +1,79 @@
-@file:Suppress("MemberVisibilityCanBePrivate")
-
 package ray.eldath.sirius.core
 
+import ray.eldath.sirius.core.PredicateBuildInterceptor.jsonObjectIntercept
 import ray.eldath.sirius.type.BaseValidationPredicate
 import ray.eldath.sirius.type.Predicate
 import ray.eldath.sirius.type.RequireOption
-import ray.eldath.sirius.type.ValidationScope
+import ray.eldath.sirius.type.TopClassValidationScopeMarker
 
-class JsonObjectValidationScope(private val depth: Int) : RequireOption(), ValidationScope {
+private const val max = Int.MAX_VALUE
+private val maxRange = 0..max
+
+class JsonObjectValidationScope(private val depth: Int) : ValidationScope<JsonObjectValidationPredicate>(depth) {
     private val children = mutableMapOf<String, BaseValidationPredicate>()
 
-    var length = 0..Int.MAX_VALUE
+    var length = maxRange
 
     infix fun String.string(block: StringValidationScope.() -> Unit) {
-        children += this to StringValidationScope(depth + 1).apply(block).build()
+        children += this to jsonObjectIntercept(block, key = this, depth = depth)
     }
 
     infix fun String.jsonObject(block: JsonObjectValidationScope.() -> Unit) {
-        children += this to JsonObjectValidationScope(depth + 1).apply(block).build()
+        children += this to jsonObjectIntercept(block, key = this, depth = depth)
     }
 
-    fun build(): JsonObjectValidationPredicate =
+    infix fun String.boolean(block: BooleanValidationScope.() -> Unit) {
+        children += this to jsonObjectIntercept(block, key = this, depth = depth)
+    }
+
+    override fun build(): JsonObjectValidationPredicate =
         JsonObjectValidationPredicate(
             children = this.children,
             lengthRange = this.length,
             required = this.isRequired,
             depth = depth
         )
+
+    override fun validateConstrains(): Boolean = length in maxRange
 }
 
-class StringValidationScope(private val depth: Int) : RequireOption(), ValidationScope {
+class BooleanValidationScope(private val depth: Int) : ValidationScope<BooleanValidationPredicate>(depth) {
+    var expected = false
+        set(value) {
+            expectedInitialized = true
+            field = value
+        }
+
+    private var expectedInitialized = false
+
+    override fun build(): BooleanValidationPredicate = BooleanValidationPredicate(expected, isRequired, depth)
+
+    override fun validateConstrains(): Boolean = expectedInitialized
+}
+
+class StringValidationScope(private val depth: Int) : ValidationScope<StringValidationPredicate>(depth) {
+
     private val tests = mutableListOf<Predicate<String>>()
 
-    var length = 0..Int.MAX_VALUE
+    var length = 0..max
 
     var minLength = 0
-    var maxLength = Int.MAX_VALUE
+    var maxLength = max
 
     fun test(predicate: Predicate<String>) {
         tests += predicate
     }
 
-    fun build(): StringValidationPredicate {
+    override fun build(): StringValidationPredicate {
         val lengthRange =
-            if (length != 0..Int.MAX_VALUE)
+            if (length != maxRange)
                 length
             else if (
-                minLength != 0 && maxLength == Int.MAX_VALUE ||
-                minLength == 0 && maxLength != Int.MAX_VALUE
+                minLength != 0 && maxLength == max ||
+                minLength == 0 && maxLength != max
             )
-                minLength..maxLength
-            else 0..Int.MAX_VALUE
+                maxRange
+            else maxRange
         return StringValidationPredicate(
             required = this.isRequired,
             lengthRange = lengthRange,
@@ -58,4 +81,18 @@ class StringValidationScope(private val depth: Int) : RequireOption(), Validatio
             depth = depth
         )
     }
+
+    override fun validateConstrains(): Boolean = minLength..maxLength in maxRange && length in maxRange
+}
+
+operator fun <E : Comparable<E>, T : ClosedRange<E>> T.contains(larger: T): Boolean =
+    this.start >= larger.start && this.endInclusive <= larger.endInclusive
+
+
+// left due to sealed class's constrain
+
+@TopClassValidationScopeMarker
+sealed class ValidationScope<T : BaseValidationPredicate>(private val depth: Int) : RequireOption() {
+    internal abstract fun build(): T
+    internal abstract fun validateConstrains(): Boolean
 }

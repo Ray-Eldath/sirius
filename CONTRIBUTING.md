@@ -12,7 +12,7 @@ In the current phase of development, it is more like a memo, so may not be consi
 ## Submitting a patch
 // TODO
 
-**Commit message format**
+### Commit message format
 
 ```
 { [!](<type>) <subject> }
@@ -22,7 +22,7 @@ In the current phase of development, it is more like a memo, so may not be consi
 
 `{...}` means the part must appear at least once, and `[...]` means the part is optional.
 
-If a change modifies the public API and therefore becomes a breaking change, `!` should be added to the ahead of the `<type>` part.
+**If a change modifies the public API and therefore becomes a breaking change, `!` should be prefixed to the `<type>` part.**
 
 The `<type>` part of your commit indicates what type of change this commit is about. The
 accepted types are:

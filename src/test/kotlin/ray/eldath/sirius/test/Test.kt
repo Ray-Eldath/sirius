@@ -8,8 +8,6 @@ object Test {
     @JvmStatic
     fun main(args: Array<String>) {
         val root = rootJsonObject {
-            required
-
             "abc" string {
                 required
                 maxLength = 9
@@ -20,9 +18,7 @@ object Test {
             "cde" jsonObject {
                 required
 
-                "abc" string {
-                    required
-                }
+                "a" boolean {}
             }
         }
 
@@ -30,6 +26,7 @@ object Test {
             {
                 "abc": "1234567890",
                 "cde": {
+                    "a": true
                 }
             }
         """.trimIndent()

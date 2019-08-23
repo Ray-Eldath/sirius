@@ -7,6 +7,6 @@ typealias RootJsonObjectValidationScope = JsonObjectValidationScope
 
 fun rootJsonObject(block: RootJsonObjectValidationScope.() -> Unit): JsonObjectValidationPredicate =
     JsonObjectValidationScope(0).apply {
-        required
         block()
+        required
     }.build()
