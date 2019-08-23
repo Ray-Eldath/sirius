@@ -13,7 +13,7 @@ abstract class RequireOption {
         get() = run { isRequired = false }
 }
 
-typealias BaseValidationScope = ValidationScope<*>
+typealias AnyValidationScope = ValidationScope<*>
 
 @DslMarker
 annotation class TopClassValidationScopeMarker

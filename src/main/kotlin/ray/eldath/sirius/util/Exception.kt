@@ -1,7 +1,7 @@
 package ray.eldath.sirius.util
 
-import ray.eldath.sirius.type.BaseValidationPredicate
-import ray.eldath.sirius.type.BaseValidationScope
+import ray.eldath.sirius.type.AnyValidationPredicate
+import ray.eldath.sirius.type.AnyValidationScope
 import ray.eldath.sirius.type.ConstrainType
 import ray.eldath.sirius.util.SiriusValidationException.InvalidConstrainException
 import ray.eldath.sirius.util.SiriusValidationException.MissingRequiredElementException
@@ -12,13 +12,13 @@ internal sealed class SiriusValidationException {
 }
 
 internal object ExceptionAssembler {
-    fun assembleJsonObjectICE(scope: BaseValidationScope, key: String, depth: Int): ICE {
+    fun assembleJsonObjectICE(scope: AnyValidationScope, key: String, depth: Int): ICE {
         val t = key + "[" + ConstrainType.fromScope(scope).displayName + "]"
         return InvalidConstrainException("[JsonObject] constrains validation failed at $t at ${assembleDepth(depth)}")
     }
 
     fun assembleJsonObjectMEE( // MEE stands for Missing required Element Exception
-        element: BaseValidationPredicate,
+        element: AnyValidationPredicate,
         key: String,
         depth: Int
     ): MEE {

@@ -3,7 +3,7 @@
 package ray.eldath.sirius.core
 
 import ray.eldath.sirius.core.PredicateBuildInterceptor.jsonObjectIntercept
-import ray.eldath.sirius.type.BaseValidationPredicate
+import ray.eldath.sirius.type.AnyValidationPredicate
 import ray.eldath.sirius.type.Predicate
 import ray.eldath.sirius.type.RequireOption
 import ray.eldath.sirius.type.TopClassValidationScopeMarker
@@ -12,7 +12,7 @@ private const val max = Int.MAX_VALUE
 private val maxRange = 0..max
 
 class JsonObjectValidationScope(private val depth: Int) : ValidationScope<JsonObjectValidationPredicate>(depth) {
-    private val children = mutableMapOf<String, BaseValidationPredicate>()
+    private val children = mutableMapOf<String, AnyValidationPredicate>()
 
     var length = maxRange
 
@@ -94,7 +94,7 @@ operator fun <E : Comparable<E>, T : ClosedRange<E>> T.contains(larger: T): Bool
 // left due to sealed class's constrain
 
 @TopClassValidationScopeMarker
-sealed class ValidationScope<T : BaseValidationPredicate>(private val depth: Int) : RequireOption() {
+sealed class ValidationScope<T : AnyValidationPredicate>(private val depth: Int) : RequireOption() {
     internal abstract fun build(): T
     internal abstract fun validateConstrains(): Boolean
 }

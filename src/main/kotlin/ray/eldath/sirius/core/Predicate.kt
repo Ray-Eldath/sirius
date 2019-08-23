@@ -1,9 +1,11 @@
 package ray.eldath.sirius.core
 
 import org.json.JSONObject
-import ray.eldath.sirius.type.BaseValidationPredicate
+import ray.eldath.sirius.core.Constrains.equals
+import ray.eldath.sirius.core.Constrains.rangeIn
+import ray.eldath.sirius.type.AnyValidationPredicate
 import ray.eldath.sirius.type.Predicate
-import ray.eldath.sirius.util.ExceptionAssembler
+import ray.eldath.sirius.util.ExceptionAssembler.assembleJsonObjectMEE
 import ray.eldath.sirius.util.Util
 
 data class StringValidationPredicate(
@@ -13,9 +15,8 @@ data class StringValidationPredicate(
     override val depth: Int
 ) : ValidationPredicate<String>(required, tests, depth) {
 
-    override fun test(value: String): Boolean =
-        tests.all { it.invoke(value) } &&
-                value.length in lengthRange
+    override fun test(value: String): List<AnyConstrain> = listOf(rangeIn(range = lengthRange, value = value.length))
+    // : tests.all { it.invoke(value) }
 
     override fun toString(): String = Util.reflectionToStringWithStyle(this)
 }
@@ -26,37 +27,39 @@ data class BooleanValidationPredicate(
     override val depth: Int
 ) : ValidationPredicate<Boolean>(required = required, depth = depth) {
 
-    override fun test(value: Boolean): Boolean = expected == value
+    override fun test(value: Boolean): List<AnyConstrain> =
+        listOf(equals(expected = expected, actual = value))
 }
 
 data class JsonObjectValidationPredicate(
     val lengthRange: IntRange = 0..Int.MAX_VALUE,
-    val children: Map<String, BaseValidationPredicate> = emptyMap(),
+    val children: Map<String, AnyValidationPredicate> = emptyMap(),
     override val required: Boolean,
     override val tests: List<Predicate<JSONObject>> = emptyList(),
     override val depth: Int
 ) : ValidationPredicate<JSONObject>(required, tests, depth) {
 
-    override fun test(value: JSONObject): Boolean =
-        tests.all { it.invoke(value) } &&
-                value.length() in lengthRange &&
-                testChildren(value, children)
+    override fun test(value: JSONObject): List<AnyConstrain> =
+        listOf(rangeIn(lengthRange, value.length())) + testChildren(value, children)
 
-    private fun testChildren(obj: JSONObject, map: Map<String, BaseValidationPredicate>): Boolean =
-        map.all { (key, value) ->
+    // : tests.all { it.invoke(value) }
+
+    private fun testChildren(obj: JSONObject, map: Map<String, AnyValidationPredicate>): List<AnyConstrain> {
+        val r = arrayListOf<AnyConstrain>()
+        for ((key, value) in map.entries) {
             if (!obj.has(key))
-                if (value.required) throw ExceptionAssembler.assembleJsonObjectMEE(
-                    value,
-                    key,
-                    depth
-                ) else true
+                if (value.required)
+                    throw assembleJsonObjectMEE(value, key, depth)
+                else continue
             else
-                when (value) {
+                r += when (value) {
                     is StringValidationPredicate -> value.test(obj.getString(key))
                     is JsonObjectValidationPredicate -> value.test(obj.getJSONObject(key))
                     is BooleanValidationPredicate -> value.test(obj.getBoolean(key))
                 }
         }
+        return r
+    }
 
     override fun toString(): String = Util.reflectionToStringWithStyle(this)
 }
@@ -67,5 +70,5 @@ sealed class ValidationPredicate<T>(
     open val tests: List<Predicate<T>> = emptyList(),
     open val depth: Int
 ) {
-    abstract fun test(value: T): Boolean
+    abstract fun test(value: T): List<AnyConstrain>
 }
