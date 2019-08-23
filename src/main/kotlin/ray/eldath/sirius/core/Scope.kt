@@ -11,7 +11,7 @@ import ray.eldath.sirius.type.TopClassValidationScopeMarker
 private const val max = Int.MAX_VALUE
 private val maxRange = 0..max
 
-class JsonObjectValidationScope(private val depth: Int) : ValidationScope<JsonObjectValidationPredicate>(depth) {
+open class JsonObjectValidationScope(private val depth: Int) : ValidationScope<JsonObjectValidationPredicate>(depth) {
     private val children = mutableMapOf<String, AnyValidationPredicate>()
 
     var length = maxRange
@@ -36,7 +36,7 @@ class JsonObjectValidationScope(private val depth: Int) : ValidationScope<JsonOb
             depth = depth
         )
 
-    override fun validateConstrains(): Boolean = length in maxRange
+    override fun isConstrainsValid(): Boolean = length in maxRange
 }
 
 class BooleanValidationScope(private val depth: Int) : ValidationScope<BooleanValidationPredicate>(depth) {
@@ -50,7 +50,7 @@ class BooleanValidationScope(private val depth: Int) : ValidationScope<BooleanVa
 
     override fun build(): BooleanValidationPredicate = BooleanValidationPredicate(expected, isRequired, depth)
 
-    override fun validateConstrains(): Boolean = expectedInitialized
+    override fun isConstrainsValid(): Boolean = !expectedInitialized
 }
 
 class StringValidationScope(private val depth: Int) : ValidationScope<StringValidationPredicate>(depth) {
@@ -84,7 +84,7 @@ class StringValidationScope(private val depth: Int) : ValidationScope<StringVali
         )
     }
 
-    override fun validateConstrains(): Boolean = minLength..maxLength in maxRange && length in maxRange
+    override fun isConstrainsValid(): Boolean = minLength..maxLength in maxRange && length in maxRange
 }
 
 operator fun <E : Comparable<E>, T : ClosedRange<E>> T.contains(larger: T): Boolean =
@@ -96,5 +96,5 @@ operator fun <E : Comparable<E>, T : ClosedRange<E>> T.contains(larger: T): Bool
 @TopClassValidationScopeMarker
 sealed class ValidationScope<T : AnyValidationPredicate>(private val depth: Int) : RequireOption() {
     internal abstract fun build(): T
-    internal abstract fun validateConstrains(): Boolean
+    internal abstract fun isConstrainsValid(): Boolean
 }
