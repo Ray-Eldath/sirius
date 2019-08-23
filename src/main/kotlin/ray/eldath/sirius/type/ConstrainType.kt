@@ -1,8 +1,6 @@
-package ray.eldath.sirius.util
+package ray.eldath.sirius.type
 
 import ray.eldath.sirius.core.*
-import ray.eldath.sirius.type.BaseValidationPredicate
-import ray.eldath.sirius.type.BaseValidationScope
 
 enum class ConstrainType(val displayName: String) {
     JSON_OBJECT("JsonObject"),

@@ -1,3 +1,10 @@
+build:
+    maxIssues: 5
+    weights:
+        complexity: 2
+        comments: 0
+        ForbiddenComment: 5
+
 complexity:
     ComplexCondition:
         threshold: 6
@@ -17,6 +24,13 @@ exceptions:
         active: true
     ThrowingNewInstanceOfSameException:
         active: true
+
+naming:
+    MatchingDeclarationName:
+        active: true
+        excludes: "**/**Internal.*"
+    TopLevelPropertyNaming:
+        active: false
 
 potential-bugs:
     UselessPostfixExpression:
@@ -38,4 +52,7 @@ style:
     LibraryCodeMustSpecifyReturnType:
         active: true
     ForbiddenComment:
+        active: true
+        values: 'TODO,FIXME,STOPSHIP,@author'
+    WildcardImport:
         active: false

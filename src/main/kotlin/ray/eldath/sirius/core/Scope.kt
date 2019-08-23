@@ -1,3 +1,5 @@
+@file:Suppress("MemberVisibilityCanBePrivate")
+
 package ray.eldath.sirius.core
 
 import ray.eldath.sirius.core.PredicateBuildInterceptor.jsonObjectIntercept

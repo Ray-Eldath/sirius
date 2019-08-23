@@ -2,12 +2,13 @@ package ray.eldath.sirius.util
 
 import ray.eldath.sirius.type.BaseValidationPredicate
 import ray.eldath.sirius.type.BaseValidationScope
+import ray.eldath.sirius.type.ConstrainType
 import ray.eldath.sirius.util.SiriusValidationException.InvalidConstrainException
 import ray.eldath.sirius.util.SiriusValidationException.MissingRequiredElementException
 
 internal sealed class SiriusValidationException {
-    class InvalidConstrainException(override val message: String) : Exception(message)
-    class MissingRequiredElementException(override val message: String) : Exception(message)
+    internal class InvalidConstrainException(override val message: String) : Exception(message)
+    internal class MissingRequiredElementException(override val message: String) : Exception(message)
 }
 
 internal object ExceptionAssembler {
