@@ -5,10 +5,6 @@ build:
         comments: 0
         ForbiddenComment: 5
 
-complexity:
-    ComplexCondition:
-        threshold: 6
-
 exceptions:
     InstanceOfCheckForException:
         active: true
@@ -43,6 +39,9 @@ style:
         active: true
     NewLineAtEndOfFile:
         active: false
+    MagicNumber:
+        active: true
+        excludes: "**/Util.*"
     MayBeConst:
         active: true
     SpacingBetweenPackageAndImports:

@@ -1,5 +1,6 @@
 package ray.eldath.sirius.core
 
+import ray.eldath.sirius.type.Predicate
 import ray.eldath.sirius.util.ExceptionAssembler
 
 object PredicateBuildInterceptor {
@@ -16,3 +17,6 @@ object PredicateBuildInterceptor {
         return inst.apply(initializer).build()
     }
 }
+
+internal fun <T> constrainsOf(tests: List<Predicate<T>>, vararg constrains: AnyConstrain) =
+    ConstrainsWrapper(constrains.toList(), tests)

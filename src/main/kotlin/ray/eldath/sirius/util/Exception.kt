@@ -2,7 +2,6 @@ package ray.eldath.sirius.util
 
 import ray.eldath.sirius.core.ContainConstrain
 import ray.eldath.sirius.core.EqualConstrain
-import ray.eldath.sirius.core.LambdaConstrain
 import ray.eldath.sirius.core.RangeConstrain
 import ray.eldath.sirius.type.AnyValidationPredicate
 import ray.eldath.sirius.type.AnyValidationScope
@@ -38,9 +37,10 @@ internal object ExceptionAssembler {
             )
         }
 
-        // STOPSHIP: incomplete support for test{ }
-        fun lambda(constrain: LambdaConstrain<*>, element: AnyValidationPredicate, key: String, depth: Int) =
-            VFE(assembleJsonObjectK("lambda", element = element, key = key, depth = depth))
+        fun lambda(index: Int, element: AnyValidationPredicate, key: String, depth: Int): VFE {
+            val trace = "\ntrace: the ${index.toOrdinal()} lambda test defined in current scope is failed"
+            return VFE(assembleJsonObjectK("lambda", element = element, key = key, depth = depth) + trace)
+        }
 
         private fun assembleJsonObjectK(
             name: String,
@@ -49,7 +49,7 @@ internal object ExceptionAssembler {
             depth: Int
         ): String {
             val k = assembleKeyT(element, key)
-            return "[$name] $name validation failed for JsonObject element at $k at ${assembleDepth(depth)}"
+            return "[JsonObject] $name validation failed for JsonObject element at $k at ${assembleDepth(depth)}"
         }
     }
 

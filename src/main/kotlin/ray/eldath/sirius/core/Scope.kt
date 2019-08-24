@@ -1,5 +1,3 @@
-@file:Suppress("MemberVisibilityCanBePrivate")
-
 package ray.eldath.sirius.core
 
 import ray.eldath.sirius.core.PredicateBuildInterceptor.jsonObjectIntercept
@@ -11,7 +9,7 @@ import ray.eldath.sirius.type.TopClassValidationScopeMarker
 private const val max = Int.MAX_VALUE
 private val maxRange = 0..max
 
-open class JsonObjectValidationScope(private val depth: Int) : ValidationScope<JsonObjectValidationPredicate>(depth) {
+open class JsonObjectValidationScope(override val depth: Int) : ValidationScope<JsonObjectValidationPredicate>(depth) {
     private val children = mutableMapOf<String, AnyValidationPredicate>()
 
     var length = maxRange
@@ -39,7 +37,7 @@ open class JsonObjectValidationScope(private val depth: Int) : ValidationScope<J
     override fun isConstrainsValid(): Boolean = length in maxRange
 }
 
-class BooleanValidationScope(private val depth: Int) : ValidationScope<BooleanValidationPredicate>(depth) {
+class BooleanValidationScope(override val depth: Int) : ValidationScope<BooleanValidationPredicate>(depth) {
     var expected = false
         set(value) {
             expectedInitialized = true
@@ -53,7 +51,7 @@ class BooleanValidationScope(private val depth: Int) : ValidationScope<BooleanVa
     override fun isConstrainsValid(): Boolean = !expectedInitialized
 }
 
-class StringValidationScope(private val depth: Int) : ValidationScope<StringValidationPredicate>(depth) {
+class StringValidationScope(override val depth: Int) : ValidationScope<StringValidationPredicate>(depth) {
 
     private val tests = mutableListOf<Predicate<String>>()
 
@@ -67,15 +65,7 @@ class StringValidationScope(private val depth: Int) : ValidationScope<StringVali
     }
 
     override fun build(): StringValidationPredicate {
-        val lengthRange =
-            if (length != maxRange)
-                length
-            else if (
-                minLength != 0 && maxLength == max ||
-                minLength == 0 && maxLength != max
-            )
-                minLength..maxLength
-            else maxRange
+        val lengthRange = if (length != maxRange) length else minLength..maxLength
         return StringValidationPredicate(
             required = this.isRequired,
             lengthRange = lengthRange,
@@ -94,7 +84,7 @@ operator fun <E : Comparable<E>, T : ClosedRange<E>> T.contains(larger: T): Bool
 // left due to sealed class's constrain
 
 @TopClassValidationScopeMarker
-sealed class ValidationScope<T : AnyValidationPredicate>(private val depth: Int) : RequireOption() {
+sealed class ValidationScope<T : AnyValidationPredicate>(open val depth: Int) : RequireOption() {
     internal abstract fun build(): T
     internal abstract fun isConstrainsValid(): Boolean
 }

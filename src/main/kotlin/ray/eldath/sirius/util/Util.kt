@@ -3,6 +3,13 @@ package ray.eldath.sirius.util
 import org.apache.commons.lang3.builder.ToStringBuilder
 import org.apache.commons.lang3.builder.ToStringStyle
 
+fun Int.toOrdinal() = this.toString() + if (this % 100 in 11..13) "th" else when (this % 10) {
+    1 -> "st"
+    2 -> "nd"
+    3 -> "rd"
+    else -> "th"
+}
+
 object Util {
     fun reflectionToStringWithStyle(obj: Any): String =
         ToStringBuilder.reflectionToString(obj,

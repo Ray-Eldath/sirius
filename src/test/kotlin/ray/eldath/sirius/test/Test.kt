@@ -20,7 +20,7 @@ object Test {
 
                 "123" string {
                     required
-                    maxLength = 4
+                    test { length < 4 }
                 }
             }
         }

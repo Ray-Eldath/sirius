@@ -16,8 +16,8 @@ data class StringValidationPredicate(
     override val depth: Int
 ) : ValidationPredicate<String>(required, tests, depth) {
 
-    override fun test(value: String): List<AnyConstrain> = listOf(rangeIn(range = lengthRange, value = value.length))
-    // TODO: tests.all { it.invoke(value) }
+    override fun test(value: String): ConstrainsWrapper<String> =
+        constrainsOf(tests, rangeIn(range = lengthRange, value = value.length))
 
     override fun toString(): String = Util.reflectionToStringWithStyle(this)
 }
@@ -28,8 +28,8 @@ data class BooleanValidationPredicate(
     override val depth: Int
 ) : ValidationPredicate<Boolean>(required = required, depth = depth) {
 
-    override fun test(value: Boolean): List<AnyConstrain> =
-        listOf(equals(expected = expected, actual = value))
+    override fun test(value: Boolean): ConstrainsWrapper<Boolean> =
+        constrainsOf(tests, equals(expected = expected, actual = value))
 }
 
 open class JsonObjectValidationPredicate(
@@ -41,38 +41,42 @@ open class JsonObjectValidationPredicate(
 ) : ValidationPredicate<JSONObject>(required, tests, depth) {
 
     // checkpoint
-    override fun test(value: JSONObject): List<AnyConstrain> {
+    override fun test(value: JSONObject): ConstrainsWrapper<JSONObject> {
         testChildren(value, children)
-        return listOf(rangeIn(lengthRange, value.length()))
+        return constrainsOf(tests, rangeIn(lengthRange, value.length()))
     }
 
-    // TODO: tests.all { it.invoke(value) }
-
     private fun testChildren(obj: JSONObject, map: Map<String, AnyValidationPredicate>) {
-        for ((key, value) in map.entries) {
+        for ((key, predicate) in map.entries) {
             if (!obj.has(key))
-                if (value.required)
-                    throw assembleJsonObjectMEE(value, key, depth)
+                if (predicate.required)
+                    throw assembleJsonObjectMEE(predicate, key, depth)
                 else continue
-            else
-                when (value) {
-                    is StringValidationPredicate ->
-                        value.test(obj.getString(key)).forEach { testChildrenEach(it, key, value) }
-                    is JsonObjectValidationPredicate ->
-                        value.test(obj.getJSONObject(key)).forEach { testChildrenEach(it, key, value) }
-                    is BooleanValidationPredicate ->
-                        value.test(obj.getBoolean(key)).forEach { testChildrenEach(it, key, value) }
+            else {
+                when (predicate) {
+                    is StringValidationPredicate -> testChildrenConstrains(key, obj.getString(key), predicate)
+                    is JsonObjectValidationPredicate -> testChildrenConstrains(key, obj.getJSONObject(key), predicate)
+                    is BooleanValidationPredicate -> testChildrenConstrains(key, obj.getBoolean(key), predicate)
                 }
+            }
         }
     }
 
-    private fun testChildrenEach(constrain: AnyConstrain, key: String, element: AnyValidationPredicate) {
+    private fun <T> testChildrenConstrains(key: String, element: T, predicate: ValidationPredicate<T>): Unit =
+        predicate.test(element).run {
+            tests.forEachIndexed { index, test ->
+                if (!test(element))
+                    throw VFEAssembler.lambda(index + 1, predicate, key, depth)
+            }
+            constrains.forEach { testConstrain(it, key, predicate) }
+        }
+
+    private fun testConstrain(constrain: AnyConstrain, key: String, predicate: AnyValidationPredicate) {
         if (!constrain.test())
             throw when (constrain) {
-                is LambdaConstrain<*> -> VFEAssembler.lambda(constrain, element, key, depth)
-                is RangeConstrain<*> -> VFEAssembler.range(constrain, element, key, depth)
-                is ContainConstrain -> VFEAssembler.contain(constrain, element, key, depth)
-                is EqualConstrain -> VFEAssembler.equal(constrain, element, key, depth)
+                is RangeConstrain<*> -> VFEAssembler.range(constrain, predicate, key, depth)
+                is ContainConstrain -> VFEAssembler.contain(constrain, predicate, key, depth)
+                is EqualConstrain -> VFEAssembler.equal(constrain, predicate, key, depth)
             }
     }
 
@@ -85,5 +89,5 @@ sealed class ValidationPredicate<T>(
     open val tests: List<Predicate<T>> = emptyList(),
     open val depth: Int
 ) {
-    internal abstract fun test(value: T): List<AnyConstrain>
+    internal abstract fun test(value: T): ConstrainsWrapper<T>
 }
