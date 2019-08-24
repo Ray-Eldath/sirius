@@ -21,7 +21,8 @@ detekt {
 }
 
 test {
-    exclude('ray.eldath.sirius.test.experiment')
+    useJUnitPlatform()
+    exclude('**/experiment/**')
 }
 
 dependencies {

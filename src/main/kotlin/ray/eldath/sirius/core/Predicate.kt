@@ -9,11 +9,12 @@ import ray.eldath.sirius.util.ExceptionAssembler.VFEAssembler
 import ray.eldath.sirius.util.ExceptionAssembler.assembleJsonObjectMEE
 import ray.eldath.sirius.util.Util
 
+// overridden values should be prefixed for named argument
 data class StringValidationPredicate(
-    val lengthRange: IntRange = 0..Int.MAX_VALUE,
     override val required: Boolean,
     override val tests: List<Predicate<String>>,
-    override val depth: Int
+    override val depth: Int,
+    val lengthRange: IntRange = 0..Int.MAX_VALUE
 ) : ValidationPredicate<String>(required, tests, depth) {
 
     override fun test(value: String): ConstrainsWrapper<String> =
@@ -23,9 +24,9 @@ data class StringValidationPredicate(
 }
 
 data class BooleanValidationPredicate(
-    val expected: Boolean,
     override val required: Boolean,
-    override val depth: Int
+    override val depth: Int,
+    val expected: Boolean
 ) : ValidationPredicate<Boolean>(required = required, depth = depth) {
 
     override fun test(value: Boolean): ConstrainsWrapper<Boolean> =
@@ -33,11 +34,11 @@ data class BooleanValidationPredicate(
 }
 
 open class JsonObjectValidationPredicate(
-    val lengthRange: IntRange = 0..Int.MAX_VALUE,
-    val children: Map<String, AnyValidationPredicate> = emptyMap(),
     override val required: Boolean,
     override val tests: List<Predicate<JSONObject>> = emptyList(),
-    override val depth: Int
+    override val depth: Int,
+    val lengthRange: IntRange = 0..Int.MAX_VALUE,
+    val children: Map<String, AnyValidationPredicate> = emptyMap()
 ) : ValidationPredicate<JSONObject>(required, tests, depth) {
 
     // checkpoint
@@ -82,6 +83,7 @@ open class JsonObjectValidationPredicate(
 
     override fun toString(): String = Util.reflectionToStringWithStyle(this)
 }
+
 
 // left due to sealed class's constrain
 sealed class ValidationPredicate<T>(

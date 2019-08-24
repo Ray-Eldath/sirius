@@ -8,9 +8,13 @@
 
 **Italicized entries indicate that they are WIP now.**
 
+ - [X] *Fundamental architecture*
+ - [ ] Global scope or option
+   - [X] `required`
+   - [ ] *`any { }`*
  - [ ] Validation DSL
    - [ ] Number
-   - [ ] Boolean
+   - [ ] *Boolean*
    - [ ] *String*
    - [ ] *JSON Object*
    - [ ] JSON Array

@@ -46,7 +46,7 @@ class BooleanValidationScope(override val depth: Int) : ValidationScope<BooleanV
 
     private var expectedInitialized = false
 
-    override fun build(): BooleanValidationPredicate = BooleanValidationPredicate(expected, isRequired, depth)
+    override fun build(): BooleanValidationPredicate = BooleanValidationPredicate(isRequired, depth, expected)
 
     override fun isConstrainsValid(): Boolean = !expectedInitialized
 }
@@ -64,25 +64,22 @@ class StringValidationScope(override val depth: Int) : ValidationScope<StringVal
         tests += predicate
     }
 
-    override fun build(): StringValidationPredicate {
-        val lengthRange = if (length != maxRange) length else minLength..maxLength
-        return StringValidationPredicate(
-            required = this.isRequired,
-            lengthRange = lengthRange,
-            tests = this.tests,
+    override fun build(): StringValidationPredicate =
+        StringValidationPredicate(
+            lengthRange = if (length != maxRange) length else minLength..maxLength,
+            required = isRequired,
+            tests = tests,
             depth = depth
         )
-    }
 
     override fun isConstrainsValid(): Boolean = minLength..maxLength in maxRange && length in maxRange
 }
 
-operator fun <E : Comparable<E>, T : ClosedRange<E>> T.contains(larger: T): Boolean =
+private operator fun <E : Comparable<E>, T : ClosedRange<E>> T.contains(larger: T): Boolean =
     this.start >= larger.start && this.endInclusive <= larger.endInclusive
 
 
 // left due to sealed class's constrain
-
 @TopClassValidationScopeMarker
 sealed class ValidationScope<T : AnyValidationPredicate>(open val depth: Int) : RequireOption() {
     internal abstract fun build(): T
