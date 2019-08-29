@@ -34,7 +34,7 @@ class JsonObjectValidationScope(override val depth: Int) : ValidationScope<JsonO
             depth = depth
         )
 
-    override fun isConstrainsValid(): Boolean = length in maxRange
+    override fun isAssertsValid(): Boolean = length in maxRange
 }
 
 class BooleanValidationScope(override val depth: Int) : ValidationScope<BooleanValidationPredicate>(depth) {
@@ -48,7 +48,7 @@ class BooleanValidationScope(override val depth: Int) : ValidationScope<BooleanV
 
     override fun build(): BooleanValidationPredicate = BooleanValidationPredicate(isRequired, depth, expected)
 
-    override fun isConstrainsValid(): Boolean = !expectedInitialized
+    override fun isAssertsValid(): Boolean = !expectedInitialized
 }
 
 class StringValidationScope(override val depth: Int) : ValidationScope<StringValidationPredicate>(depth) {
@@ -72,7 +72,7 @@ class StringValidationScope(override val depth: Int) : ValidationScope<StringVal
             depth = depth
         )
 
-    override fun isConstrainsValid(): Boolean = minLength..maxLength in maxRange && length in maxRange
+    override fun isAssertsValid(): Boolean = minLength..maxLength in maxRange && length in maxRange
 }
 
 private operator fun <E : Comparable<E>, T : ClosedRange<E>> T.contains(larger: T): Boolean =
@@ -83,5 +83,5 @@ private operator fun <E : Comparable<E>, T : ClosedRange<E>> T.contains(larger: 
 @TopClassValidationScopeMarker
 sealed class ValidationScope<T : AnyValidationPredicate>(open val depth: Int) : RequireOption() {
     internal abstract fun build(): T
-    internal abstract fun isConstrainsValid(): Boolean
+    internal abstract fun isAssertsValid(): Boolean
 }

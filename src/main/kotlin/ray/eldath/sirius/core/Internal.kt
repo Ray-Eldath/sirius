@@ -12,8 +12,8 @@ object PredicateBuildInterceptor {
         val d = depth + 1
         val inst = T::class.java.getDeclaredConstructor(Int::class.java).newInstance(d)
 
-        if (!inst.isConstrainsValid())
-            throw ExceptionAssembler.assembleJsonObjectICE(scope = inst, key = key, depth = d)
+        if (!inst.isAssertsValid())
+            throw ExceptionAssembler.assembleJsonObjectIAE(scope = inst, key = key, depth = d)
         return inst.apply(initializer).build()
     }
 }

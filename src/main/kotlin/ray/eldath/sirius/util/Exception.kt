@@ -9,7 +9,7 @@ import ray.eldath.sirius.type.Validatable
 import ray.eldath.sirius.util.SiriusValidationException.*
 
 internal sealed class SiriusValidationException {
-    internal class InvalidConstrainException(override val message: String) : Exception(message)
+    internal class InvalidAssertException(override val message: String) : Exception(message)
     internal class ValidationFailedException(override val message: String) : Exception(message)
     internal class MissingRequiredElementException(override val message: String) : Exception(message)
 }
@@ -53,8 +53,8 @@ internal object ExceptionAssembler {
         }
     }
 
-    fun assembleJsonObjectICE(scope: AnyValidationScope, key: String, depth: Int): ICE =
-        ICE("[JsonObject] assert validation failed at ${assembleKeyT(scope, key)} at ${assembleDepth(depth)}")
+    fun assembleJsonObjectIAE(scope: AnyValidationScope, key: String, depth: Int): IAE =
+        IAE("[JsonObject] assert validation failed at ${assembleKeyT(scope, key)} at ${assembleDepth(depth)}")
 
     fun assembleJsonObjectMEE(element: AnyValidationPredicate, key: String, depth: Int): MEE =
         MEE("[JsonObject] missing required element ${assembleKeyT(element, key)} at ${assembleDepth(depth)}")
@@ -75,5 +75,5 @@ internal object ExceptionAssembler {
 }
 
 internal typealias MEE = MissingRequiredElementException
-internal typealias ICE = InvalidConstrainException
+internal typealias IAE = InvalidAssertException
 internal typealias VFE = ValidationFailedException

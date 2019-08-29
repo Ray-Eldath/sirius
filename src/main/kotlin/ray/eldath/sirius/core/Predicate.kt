@@ -55,24 +55,24 @@ data class JsonObjectValidationPredicate(
                 else continue
             else {
                 when (predicate) {
-                    is StringValidationPredicate -> testChildrenConstrains(key, obj.getString(key), predicate)
-                    is JsonObjectValidationPredicate -> testChildrenConstrains(key, obj.getJSONObject(key), predicate)
-                    is BooleanValidationPredicate -> testChildrenConstrains(key, obj.getBoolean(key), predicate)
+                    is StringValidationPredicate -> testChildrenAsserts(key, obj.getString(key), predicate)
+                    is JsonObjectValidationPredicate -> testChildrenAsserts(key, obj.getJSONObject(key), predicate)
+                    is BooleanValidationPredicate -> testChildrenAsserts(key, obj.getBoolean(key), predicate)
                 }
             }
         }
     }
 
-    private fun <T> testChildrenConstrains(key: String, element: T, predicate: ValidationPredicate<T>): Unit =
+    private fun <T> testChildrenAsserts(key: String, element: T, predicate: ValidationPredicate<T>): Unit =
         predicate.test(element).run {
             tests.forEachIndexed { index, test ->
                 if (!test(element))
                     throw VFEAssembler.lambda(index + 1, predicate, key, depth)
             }
-            asserts.forEach { testConstrain(it, key, predicate) }
+            asserts.forEach { testAssert(it, key, predicate) }
         }
 
-    private fun testConstrain(assert: AnyAssert, key: String, predicate: AnyValidationPredicate) {
+    private fun testAssert(assert: AnyAssert, key: String, predicate: AnyValidationPredicate) {
         if (!assert.test())
             throw when (assert) {
                 is RangeAssert<*> -> VFEAssembler.range(assert, predicate, key, depth)
