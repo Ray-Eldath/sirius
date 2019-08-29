@@ -18,5 +18,5 @@ object PredicateBuildInterceptor {
     }
 }
 
-internal fun <T> assertsOf(tests: List<Predicate<T>>, vararg asserts: AnyAssert) =
+internal fun <T> assertsOf(tests: List<Predicate<T>> = emptyList(), vararg asserts: AnyAssert) =
     AssertWrapper(asserts.toList(), tests)

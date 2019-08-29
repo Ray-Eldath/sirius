@@ -5,12 +5,14 @@ import ray.eldath.sirius.type.AnyValidationPredicate
 import ray.eldath.sirius.type.Predicate
 import ray.eldath.sirius.type.RequireOption
 import ray.eldath.sirius.type.TopClassValidationScopeMarker
+import ray.eldath.sirius.util.ExceptionAssembler
 
 private const val max = Int.MAX_VALUE
 private val maxRange = 0..max
 
 class JsonObjectValidationScope(override val depth: Int) : ValidationScope<JsonObjectValidationPredicate>(depth) {
     private val children = mutableMapOf<String, AnyValidationPredicate>()
+    private var _any: JsonObjectValidationScope? = null
 
     var length = maxRange
 
@@ -26,12 +28,22 @@ class JsonObjectValidationScope(override val depth: Int) : ValidationScope<JsonO
         children += this to jsonObjectIntercept(block, key = this, depth = depth)
     }
 
+    fun any(block: JsonObjectValidationScope.() -> Unit) {
+        if (_any != null)
+            throw ExceptionAssembler.assembleMABE(this, depth)
+        else {
+            _any = JsonObjectValidationScope(depth + 1)
+            _any?.apply(block)
+        }
+    }
+
     override fun build(): JsonObjectValidationPredicate =
         JsonObjectValidationPredicate(
             children = this.children,
             lengthRange = this.length,
             required = this.isRequired,
-            depth = depth
+            depth = depth,
+            any = _any
         )
 
     override fun isAssertsValid(): Boolean = length in maxRange

@@ -7,15 +7,24 @@ import ray.eldath.sirius.type.AnyValidationPredicate
 import ray.eldath.sirius.type.AnyValidationScope
 import ray.eldath.sirius.type.Validatable
 import ray.eldath.sirius.util.SiriusValidationException.*
+import ray.eldath.sirius.util.SiriusValidationException.InvalidSchemaException.MultipleAnyBlockException
 
-internal sealed class SiriusValidationException {
-    internal class InvalidAssertException(override val message: String) : Exception(message)
-    internal class ValidationFailedException(override val message: String) : Exception(message)
-    internal class MissingRequiredElementException(override val message: String) : Exception(message)
+internal sealed class SiriusValidationException(override val message: String) : Exception(message) {
+
+    internal sealed class InvalidSchemaException(override val message: String) : SiriusValidationException(message) {
+        internal class InvalidAssertException(override val message: String) : InvalidSchemaException(message)
+        internal class MultipleAnyBlockException(override val message: String) : InvalidSchemaException(message)
+    }
+
+    internal class ValidationFailedException(override val message: String) : SiriusValidationException(message)
+    internal class MissingRequiredElementException(override val message: String) : SiriusValidationException(message)
 }
 
 internal object ExceptionAssembler {
     internal object VFEAssembler {
+        fun anyBlock(depth: Int) =
+            VFE("[JsonObject] all validation failed in [any block] defined for JsonObject at ${assembleDepth(depth)}")
+
         fun equal(assert: EqualAssert<*>, element: AnyValidationPredicate, key: String, depth: Int) =
             VFE(
                 assembleJsonObjectK("equal", element, key, depth) +
@@ -45,7 +54,7 @@ internal object ExceptionAssembler {
         private fun assembleJsonObjectK(
             name: String,
             element: AnyValidationPredicate,
-            key: String,
+            key: String = "",
             depth: Int
         ): String {
             val k = assembleKeyT(element, key)
@@ -53,20 +62,26 @@ internal object ExceptionAssembler {
         }
     }
 
-    fun assembleJsonObjectIAE(scope: AnyValidationScope, key: String, depth: Int): IAE =
+    internal fun assembleMABE(scope: AnyValidationScope, depth: Int): MultipleAnyBlockException =
+        MultipleAnyBlockException("[${name(scope)}] only one any{} block could provided at ${assembleDepth(depth) + 1}")
+
+    internal fun assembleJsonObjectIAE(scope: AnyValidationScope, key: String, depth: Int): IAE =
         IAE("[JsonObject] assert validation failed at ${assembleKeyT(scope, key)} at ${assembleDepth(depth)}")
 
-    fun assembleJsonObjectMEE(element: AnyValidationPredicate, key: String, depth: Int): MEE =
+    internal fun assembleJsonObjectMEE(element: AnyValidationPredicate, key: String, depth: Int): MEE =
         MEE("[JsonObject] missing required element ${assembleKeyT(element, key)} at ${assembleDepth(depth)}")
 
     private fun assembleKeyT(pOrs: Any, key: String): String {
         val t = when (pOrs) {
-            is AnyValidationPredicate -> Validatable.fromPredicate(pOrs).displayName
-            is AnyValidationScope -> Validatable.fromScope(pOrs).displayName
+            is AnyValidationPredicate -> name(pOrs)
+            is AnyValidationScope -> name(pOrs)
             else -> "?"
         }
         return "($key:$t)"
     }
+
+    private fun name(scope: AnyValidationScope) = Validatable.fromScope(scope).displayName
+    private fun name(predicate: AnyValidationPredicate) = Validatable.fromPredicate(predicate).displayName
 
     private fun assembleDepth(depth: Int) =
         if (depth == 0)
@@ -75,5 +90,5 @@ internal object ExceptionAssembler {
 }
 
 internal typealias MEE = MissingRequiredElementException
-internal typealias IAE = InvalidAssertException
+internal typealias IAE = InvalidSchemaException.InvalidAssertException
 internal typealias VFE = ValidationFailedException

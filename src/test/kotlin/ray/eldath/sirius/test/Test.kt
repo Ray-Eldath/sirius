@@ -18,12 +18,14 @@ object Test {
             "cde" jsonObject {
                 required
 
-                "123" string {
-                    required
-                }
+                any {
+                    "123" string {
+                        required
+                    }
 
-                "456" boolean {
-                    expected = true
+                    "456" boolean {
+                        expected = true
+                    }
                 }
             }
         }
@@ -32,8 +34,7 @@ object Test {
             {
                 "abc": "1234567890",
                 "cde": {
-                    "123": "12345",
-                    "456": false
+                    "456": true
                 }
             }
         """.trimIndent()

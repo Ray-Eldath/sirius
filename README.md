@@ -11,7 +11,7 @@
  - [X] *Fundamental architecture*
  - [ ] Global scope or option
    - [X] `required`
-   - [ ] *`any { }`*
+   - [X] *`any { }`*
  - [ ] Validation DSL
    - [ ] Number
    - [ ] *Boolean*

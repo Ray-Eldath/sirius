@@ -7,6 +7,7 @@ import ray.eldath.sirius.type.AnyValidationPredicate
 import ray.eldath.sirius.type.Predicate
 import ray.eldath.sirius.util.ExceptionAssembler.VFEAssembler
 import ray.eldath.sirius.util.ExceptionAssembler.assembleJsonObjectMEE
+import ray.eldath.sirius.util.SiriusValidationException
 import ray.eldath.sirius.util.Util
 
 // overridden values should be prefixed for named argument
@@ -38,29 +39,47 @@ data class JsonObjectValidationPredicate(
     override val tests: List<Predicate<JSONObject>> = emptyList(),
     override val depth: Int,
     val lengthRange: IntRange = 0..Int.MAX_VALUE,
-    val children: Map<String, AnyValidationPredicate> = emptyMap()
+    val children: Map<String, AnyValidationPredicate> = emptyMap(),
+    val any: JsonObjectValidationScope? = null
 ) : ValidationPredicate<JSONObject>(required, tests, depth) {
 
     // checkpoint
     override fun test(value: JSONObject): AssertWrapper<JSONObject> {
-        testChildren(value, children)
+        if (any != null)
+            testAnyBlock(value, any.build())
+        children.entries.forEach { testChildrenEntry(value, it) }
         return assertsOf(tests, rangeIn(lengthRange, value.length()))
     }
 
-    private fun testChildren(obj: JSONObject, map: Map<String, AnyValidationPredicate>) {
-        for ((key, predicate) in map.entries) {
-            if (!obj.has(key))
-                if (predicate.required)
-                    throw assembleJsonObjectMEE(predicate, key, depth)
-                else continue
-            else {
-                when (predicate) {
-                    is StringValidationPredicate -> testChildrenAsserts(key, obj.getString(key), predicate)
-                    is JsonObjectValidationPredicate -> testChildrenAsserts(key, obj.getJSONObject(key), predicate)
-                    is BooleanValidationPredicate -> testChildrenAsserts(key, obj.getBoolean(key), predicate)
-                }
+    private fun testAnyBlock(obj: JSONObject, anyBlock: JsonObjectValidationPredicate) {
+        val entries = anyBlock.children.entries
+        var counter = 0
+        entries.forEach {
+            try {
+                testChildrenEntry(obj, it)
+            } catch (e: SiriusValidationException) {
+                counter += 1
             }
         }
+
+        if (counter == entries.size)
+            throw VFEAssembler.anyBlock(depth)
+    }
+
+    private fun testChildrenEntry(obj: JSONObject, entry: Map.Entry<String, AnyValidationPredicate>) {
+        val key = entry.key
+        val predicate = entry.value
+
+        if (!obj.has(key))
+            if (predicate.required)
+                throw assembleJsonObjectMEE(predicate, key, depth)
+            else return
+        else
+            when (predicate) {
+                is StringValidationPredicate -> testChildrenAsserts(key, obj.getString(key), predicate)
+                is JsonObjectValidationPredicate -> testChildrenAsserts(key, obj.getJSONObject(key), predicate)
+                is BooleanValidationPredicate -> testChildrenAsserts(key, obj.getBoolean(key), predicate)
+            }
     }
 
     private fun <T> testChildrenAsserts(key: String, element: T, predicate: ValidationPredicate<T>): Unit =
