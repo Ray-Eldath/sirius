@@ -20,7 +20,10 @@ object Test {
 
                 "123" string {
                     required
-                    test { length < 4 }
+                }
+
+                "456" boolean {
+                    expected = true
                 }
             }
         }
@@ -29,7 +32,8 @@ object Test {
             {
                 "abc": "1234567890",
                 "cde": {
-                    "123": "12345"
+                    "123": "12345",
+                    "456": false
                 }
             }
         """.trimIndent()

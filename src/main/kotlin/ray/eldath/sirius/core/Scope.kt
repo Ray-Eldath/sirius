@@ -9,7 +9,7 @@ import ray.eldath.sirius.type.TopClassValidationScopeMarker
 private const val max = Int.MAX_VALUE
 private val maxRange = 0..max
 
-open class JsonObjectValidationScope(override val depth: Int) : ValidationScope<JsonObjectValidationPredicate>(depth) {
+class JsonObjectValidationScope(override val depth: Int) : ValidationScope<JsonObjectValidationPredicate>(depth) {
     private val children = mutableMapOf<String, AnyValidationPredicate>()
 
     var length = maxRange
@@ -79,7 +79,7 @@ private operator fun <E : Comparable<E>, T : ClosedRange<E>> T.contains(larger: 
     this.start >= larger.start && this.endInclusive <= larger.endInclusive
 
 
-// left due to sealed class's constrain
+// left due to sealed class's constraint
 @TopClassValidationScopeMarker
 sealed class ValidationScope<T : AnyValidationPredicate>(open val depth: Int) : RequireOption() {
     internal abstract fun build(): T

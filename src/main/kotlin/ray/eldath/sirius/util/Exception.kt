@@ -1,11 +1,11 @@
 package ray.eldath.sirius.util
 
-import ray.eldath.sirius.core.ContainConstrain
-import ray.eldath.sirius.core.EqualConstrain
-import ray.eldath.sirius.core.RangeConstrain
+import ray.eldath.sirius.core.ContainAssert
+import ray.eldath.sirius.core.EqualAssert
+import ray.eldath.sirius.core.RangeAssert
 import ray.eldath.sirius.type.AnyValidationPredicate
 import ray.eldath.sirius.type.AnyValidationScope
-import ray.eldath.sirius.type.ConstrainType
+import ray.eldath.sirius.type.Validatable
 import ray.eldath.sirius.util.SiriusValidationException.*
 
 internal sealed class SiriusValidationException {
@@ -16,24 +16,24 @@ internal sealed class SiriusValidationException {
 
 internal object ExceptionAssembler {
     internal object VFEAssembler {
-        fun equal(constrain: EqualConstrain<*>, element: AnyValidationPredicate, key: String, depth: Int) =
+        fun equal(assert: EqualAssert<*>, element: AnyValidationPredicate, key: String, depth: Int) =
             VFE(
                 assembleJsonObjectK("equal", element, key, depth) +
-                        "\n trace: ${constrain.actual}(actual) should be ${constrain.expected}(expected)"
+                        "\n trace: ${assert.actual}(actual) should be ${assert.expected}(expected)"
             )
 
-        fun contain(constrain: ContainConstrain<*>, element: AnyValidationPredicate, key: String, depth: Int) =
+        fun contain(assert: ContainAssert<*>, element: AnyValidationPredicate, key: String, depth: Int) =
             VFE(
                 assembleJsonObjectK("contain", element, key, depth) +
-                        "\ntrace: ${constrain.element}(actual) should be contained in ${constrain.container}(expected)"
+                        "\ntrace: ${assert.element}(actual) should be contained in ${assert.container}(expected)"
             )
 
-        fun range(constrain: RangeConstrain<*>, element: AnyValidationPredicate, key: String, depth: Int): VFE {
-            val actual = constrain.actual
+        fun range(assert: RangeAssert<*>, element: AnyValidationPredicate, key: String, depth: Int): VFE {
+            val actual = assert.actual
             val header = if (actual.start == actual.endInclusive) actual.start.toString() else actual.toString()
             return VFE(
                 assembleJsonObjectK("range", element = element, key = key, depth = depth) +
-                        "\ntrace: $header(actual) should be contained in ${constrain.bigger}(expected)"
+                        "\ntrace: $header(actual) should be contained in ${assert.bigger}(expected)"
             )
         }
 
@@ -54,15 +54,15 @@ internal object ExceptionAssembler {
     }
 
     fun assembleJsonObjectICE(scope: AnyValidationScope, key: String, depth: Int): ICE =
-        ICE("[JsonObject] constrains validation failed at ${assembleKeyT(scope, key)} at ${assembleDepth(depth)}")
+        ICE("[JsonObject] assert validation failed at ${assembleKeyT(scope, key)} at ${assembleDepth(depth)}")
 
     fun assembleJsonObjectMEE(element: AnyValidationPredicate, key: String, depth: Int): MEE =
         MEE("[JsonObject] missing required element ${assembleKeyT(element, key)} at ${assembleDepth(depth)}")
 
     private fun assembleKeyT(pOrs: Any, key: String): String {
         val t = when (pOrs) {
-            is AnyValidationPredicate -> ConstrainType.fromPredicate(pOrs).displayName
-            is AnyValidationScope -> ConstrainType.fromScope(pOrs).displayName
+            is AnyValidationPredicate -> Validatable.fromPredicate(pOrs).displayName
+            is AnyValidationScope -> Validatable.fromScope(pOrs).displayName
             else -> "?"
         }
         return "($key:$t)"
