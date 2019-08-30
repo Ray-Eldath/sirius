@@ -8,8 +8,6 @@ object Test {
     @JvmStatic
     fun main(args: Array<String>) {
         val root = rootJsonObject {
-            lengthRange = 1..1
-
             "abc" string {
                 required
                 maxLength = 9
@@ -20,14 +18,13 @@ object Test {
             "cde" jsonObject {
                 required
 
-                any {
-                    "123" string {
-                        required
-                    }
+                "123" string {
+                    required
+                    expected("123", "456")
+                }
 
-                    "456" boolean {
-                        expected = true
-                    }
+                "456" boolean {
+                    expected = true
                 }
             }
         }
@@ -36,6 +33,7 @@ object Test {
             {
                 "abc": "1234567890",
                 "cde": {
+                    "123": "123",
                     "456": true
                 }
             }

@@ -11,6 +11,9 @@ internal object Asserts {
     internal fun <T : Comparable<T>> rangeIn(propertyName: String, range: Range<T>, value: T) =
         RangeAssert(range, value..value, propertyName)
 
+    internal fun <T> contain(propertyName: String, container: Iterable<T>, element: T) =
+        ContainAssert(element, container, propertyName)
+
     internal fun <T : Comparable<T>> equals(propertyName: String, expected: T, actual: T) =
         EqualAssert(expected, actual, propertyName)
 }
@@ -18,7 +21,7 @@ internal object Asserts {
 internal class ContainAssert<T>(val element: T, val container: Iterable<T>, override val propertyName: String) :
     Assert<T>(propertyName) {
 
-    override fun test(): Boolean = element in container
+    override fun test(): Boolean = if (container.none()) true else element in container
 }
 
 internal class RangeAssert<T : Comparable<T>>(

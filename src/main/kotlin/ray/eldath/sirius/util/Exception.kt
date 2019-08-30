@@ -26,35 +26,17 @@ internal object ExceptionAssembler {
         fun anyBlock(depth: Int) =
             VFE("[JsonObject] all validation failed in [any block] defined for JsonObject at ${assembleDepth(depth)}")
 
-        fun equal(
-            assert: EqualAssert<*>,
-            element: AnyValidationPredicate,
-            propertyName: String,
-            key: String,
-            depth: Int
-        ) = VFE(
+        fun equal(assert: EqualAssert<*>, element: AnyValidationPredicate, propertyName: String, key: String, depth: Int) = VFE(
             assembleJsonObjectK("equal", propertyName, element, key, depth) +
                     "\n trace: ${assert.actual}(actual) should be ${assert.expected}(expected)"
         )
 
-        fun contain(
-            assert: ContainAssert<*>,
-            element: AnyValidationPredicate,
-            propertyName: String,
-            key: String,
-            depth: Int
-        ) = VFE(
+        fun contain(assert: ContainAssert<*>, element: AnyValidationPredicate, propertyName: String, key: String, depth: Int) = VFE(
             assembleJsonObjectK("contain", propertyName, element, key, depth) +
                     "\ntrace: ${assert.element}(actual) should be contained in ${assert.container}(expected)"
         )
 
-        fun range(
-            assert: RangeAssert<*>,
-            element: AnyValidationPredicate,
-            propertyName: String,
-            key: String,
-            depth: Int
-        ): VFE {
+        fun range(assert: RangeAssert<*>, element: AnyValidationPredicate, propertyName: String, key: String, depth: Int): VFE {
             val actual = assert.actual
             val header = if (actual.start == actual.endInclusive) actual.start.toString() else actual.toString()
             return VFE(
@@ -68,16 +50,10 @@ internal object ExceptionAssembler {
             return VFE(assembleJsonObjectK("lambda", propertyName, element, key, depth) + trace)
         }
 
-        private fun assembleJsonObjectK(
-            type: String,
-            propertyName: String,
-            element: AnyValidationPredicate,
-            key: String,
-            depth: Int
-        ): String {
+        private fun assembleJsonObjectK(type: String, propertyName: String, element: AnyValidationPredicate, key: String, depth: Int): String {
             val t = assembleKeyT(element, key)
             val d = assembleDepth(depth)
-            return "[JsonObject] $type validation of property $propertyName failed for JsonObject element at $t at $d"
+            return "[JsonObject] $type validation of property \"$propertyName\" failed for JsonObject element at $t at $d"
         }
     }
 

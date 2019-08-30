@@ -71,13 +71,19 @@ class BooleanValidationScope(override val depth: Int) : ValidationScope<BooleanV
 }
 
 class StringValidationScope(override val depth: Int) : ValidationScope<StringValidationPredicate>(depth) {
-
     private val tests = mutableListOf<Predicate<String>>()
+    private val expectedList = mutableListOf<String>()
 
     var lengthRange = 0..max
 
     var minLength = 0
     var maxLength = max
+
+    fun expected(vararg expected: String) {
+        if (expected.size == 1)
+            expectedList.clear()
+        expectedList += expected
+    }
 
     fun test(predicate: Predicate<String>) {
         tests += predicate
@@ -85,6 +91,7 @@ class StringValidationScope(override val depth: Int) : ValidationScope<StringVal
 
     override fun build(): StringValidationPredicate =
         StringValidationPredicate(
+            expectedValue = expectedList,
             lengthRange = if (lengthRange != maxRange) lengthRange else minLength..maxLength,
             required = isRequired,
             tests = tests,

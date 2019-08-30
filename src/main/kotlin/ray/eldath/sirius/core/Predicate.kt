@@ -1,6 +1,7 @@
 package ray.eldath.sirius.core
 
 import org.json.JSONObject
+import ray.eldath.sirius.core.Asserts.contain
 import ray.eldath.sirius.core.Asserts.equals
 import ray.eldath.sirius.core.Asserts.rangeIn
 import ray.eldath.sirius.type.AnyValidationPredicate
@@ -16,11 +17,16 @@ class StringValidationPredicate(
     override val required: Boolean,
     override val tests: List<Predicate<String>>,
     override val depth: Int,
-    val lengthRange: IntRange = 0..Int.MAX_VALUE
+    val lengthRange: IntRange = 0..Int.MAX_VALUE,
+    val expectedValue: List<String>
 ) : ValidationPredicate<String>(required, tests, depth) {
 
     override fun test(value: String): AssertWrapper<String> =
-        assertsOf(tests, rangeIn("length", range = lengthRange, value = value.length))
+        assertsOf(
+            tests,
+            rangeIn("length", range = lengthRange, value = value.length),
+            contain("value", container = expectedValue, element = value)
+        )
 
     override fun toString(): String = Util.reflectionToStringWithStyle(this)
 }
