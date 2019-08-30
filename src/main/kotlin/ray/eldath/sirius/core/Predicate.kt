@@ -20,7 +20,7 @@ class StringValidationPredicate(
 ) : ValidationPredicate<String>(required, tests, depth) {
 
     override fun test(value: String): AssertWrapper<String> =
-        assertsOf(tests, rangeIn(range = lengthRange, value = value.length))
+        assertsOf(tests, rangeIn("length", range = lengthRange, value = value.length))
 
     override fun toString(): String = Util.reflectionToStringWithStyle(this)
 }
@@ -32,7 +32,7 @@ class BooleanValidationPredicate(
 ) : ValidationPredicate<Boolean>(required = required, depth = depth) {
 
     override fun test(value: Boolean): AssertWrapper<Boolean> =
-        assertsOf(tests, equals(expected = expected, actual = value))
+        assertsOf(tests, equals("expected", expected = expected, actual = value))
 }
 
 class JsonObjectValidationPredicate(
@@ -55,7 +55,7 @@ class JsonObjectValidationPredicate(
         if (any != null)
             testAnyBlock(value, any.build())
         children.entries.forEach { testChildrenPredicate(value, it) }
-        return assertsOf(tests, rangeIn(lengthRange, value.length()))
+        return assertsOf(tests, rangeIn("length", lengthRange, value.length()))
     }
 
     private fun testAnyBlock(obj: JSONObject, anyBlock: JsonObjectValidationPredicate) {
@@ -98,16 +98,16 @@ class JsonObjectValidationPredicate(
     private fun <T> testTests(tests: List<Predicate<T>>, predicate: ValidationPredicate<T>, key: String, element: T) =
         tests.forEachIndexed { index, test ->
             if (!test(element))
-                throw VFEAssembler.lambda(index + 1, predicate, key, depth)
+                throw VFEAssembler.lambda(index + 1, predicate, "[test block]", key, depth)
         }.let { true }
 
     private fun testAsserts(asserts: List<AnyAssert>, key: String, predicate: AnyValidationPredicate): Unit =
         asserts.forEach {
             if (!it.test())
                 throw when (it) {
-                    is RangeAssert<*> -> VFEAssembler.range(it, predicate, key, depth)
-                    is ContainAssert -> VFEAssembler.contain(it, predicate, key, depth)
-                    is EqualAssert -> VFEAssembler.equal(it, predicate, key, depth)
+                    is RangeAssert<*> -> VFEAssembler.range(it, predicate, it.propertyName, key, depth)
+                    is ContainAssert -> VFEAssembler.contain(it, predicate, it.propertyName, key, depth)
+                    is EqualAssert -> VFEAssembler.equal(it, predicate, it.propertyName, key, depth)
                 }
         }
 

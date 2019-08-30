@@ -8,10 +8,12 @@ object Test {
     @JvmStatic
     fun main(args: Array<String>) {
         val root = rootJsonObject {
+            lengthRange = 1..1
+
             "abc" string {
                 required
                 maxLength = 9
-                length = 1..10
+                lengthRange = 1..10
                 test { length in 1..12 }
             }
 

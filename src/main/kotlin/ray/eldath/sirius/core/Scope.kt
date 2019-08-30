@@ -16,7 +16,7 @@ class JsonObjectValidationScope(override val depth: Int) : ValidationScope<JsonO
     private val tests = mutableListOf<Predicate<JSONObject>>()
     private var _any: JsonObjectValidationScope? = null
 
-    var length = maxRange
+    var lengthRange = maxRange
 
     infix fun String.string(block: StringValidationScope.() -> Unit) {
         children += this to jsonObjectIntercept(block, key = this, depth = depth)
@@ -47,13 +47,13 @@ class JsonObjectValidationScope(override val depth: Int) : ValidationScope<JsonO
         JsonObjectValidationPredicate(
             tests = this.tests,
             children = this.children,
-            lengthRange = this.length,
+            lengthRange = this.lengthRange,
             required = this.isRequired,
             depth = depth,
             any = _any
         )
 
-    override fun isAssertsValid(): Boolean = length in maxRange
+    override fun isAssertsValid(): Boolean = lengthRange in maxRange
 }
 
 class BooleanValidationScope(override val depth: Int) : ValidationScope<BooleanValidationPredicate>(depth) {
@@ -74,7 +74,7 @@ class StringValidationScope(override val depth: Int) : ValidationScope<StringVal
 
     private val tests = mutableListOf<Predicate<String>>()
 
-    var length = 0..max
+    var lengthRange = 0..max
 
     var minLength = 0
     var maxLength = max
@@ -85,13 +85,13 @@ class StringValidationScope(override val depth: Int) : ValidationScope<StringVal
 
     override fun build(): StringValidationPredicate =
         StringValidationPredicate(
-            lengthRange = if (length != maxRange) length else minLength..maxLength,
+            lengthRange = if (lengthRange != maxRange) lengthRange else minLength..maxLength,
             required = isRequired,
             tests = tests,
             depth = depth
         )
 
-    override fun isAssertsValid(): Boolean = minLength..maxLength in maxRange && length in maxRange
+    override fun isAssertsValid(): Boolean = minLength..maxLength in maxRange && lengthRange in maxRange
 }
 
 private operator fun <E : Comparable<E>, T : ClosedRange<E>> T.contains(larger: T): Boolean =

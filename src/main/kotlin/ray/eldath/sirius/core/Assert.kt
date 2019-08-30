@@ -5,24 +5,34 @@ package ray.eldath.sirius.core
 import ray.eldath.sirius.type.Predicate
 
 internal object Asserts {
-    internal fun <T : Comparable<T>> range(bigger: Range<T>, value: Range<T>) = RangeAssert(bigger, value)
+    internal fun <T : Comparable<T>> range(propertyName: String, bigger: Range<T>, value: Range<T>) =
+        RangeAssert(bigger, value, propertyName)
 
-    internal fun <T : Comparable<T>> rangeIn(range: Range<T>, value: T) = RangeAssert(range, value..value)
+    internal fun <T : Comparable<T>> rangeIn(propertyName: String, range: Range<T>, value: T) =
+        RangeAssert(range, value..value, propertyName)
 
-    internal fun <T : Comparable<T>> equals(expected: T, actual: T) = EqualAssert(expected, actual)
+    internal fun <T : Comparable<T>> equals(propertyName: String, expected: T, actual: T) =
+        EqualAssert(expected, actual, propertyName)
 }
 
-internal class ContainAssert<T>(val element: T, val container: Iterable<T>) : Assert<T>() {
+internal class ContainAssert<T>(val element: T, val container: Iterable<T>, override val propertyName: String) :
+    Assert<T>(propertyName) {
+
     override fun test(): Boolean = element in container
 }
 
-internal class RangeAssert<T : Comparable<T>>(val bigger: Range<T>, val actual: Range<T>) : Assert<ClosedRange<T>>() {
+internal class RangeAssert<T : Comparable<T>>(
+    val bigger: Range<T>,
+    val actual: Range<T>,
+    override val propertyName: String
+) : Assert<ClosedRange<T>>(propertyName) {
 
-    override fun test(): Boolean =
-        bigger.start <= actual.start && bigger.endInclusive >= actual.endInclusive
+    override fun test(): Boolean = bigger.start <= actual.start && bigger.endInclusive >= actual.endInclusive
 }
 
-internal class EqualAssert<T : Comparable<T>>(val expected: T, val actual: T) : Assert<T>() {
+internal class EqualAssert<T : Comparable<T>>(val expected: T, val actual: T, override val propertyName: String) :
+    Assert<T>(propertyName) {
+
     override fun test(): Boolean = expected == actual
 }
 
@@ -37,7 +47,7 @@ internal class AssertWrapper<T>(
 //     override fun test(): Boolean = lambda.invoke(input)
 // }
 
-sealed class Assert<T> {
+sealed class Assert<T>(open val propertyName: String) {
     abstract fun test(): Boolean
 }
 
