@@ -3,6 +3,7 @@ package ray.eldath.sirius.test.jmh
 import org.json.JSONObject
 import org.json.JSONTokener
 import org.openjdk.jmh.annotations.*
+import org.openjdk.jmh.profile.GCProfiler
 import org.openjdk.jmh.results.format.ResultFormatType
 import org.openjdk.jmh.runner.Runner
 import org.openjdk.jmh.runner.options.OptionsBuilder
@@ -27,7 +28,15 @@ open class JmhTest {
             {
                 "abc": "1234567890",
                 "cde": {
-                    "456": true
+                    "456": true,
+                    "789": {
+                        "t": "nothing",
+                        "T": "everything"
+                    },
+                    "101": {
+                        "something": "ss",
+                        "anything": { "anything": { "anything": { "anything": "anything" } } }
+                    }
                 }
             }
         """.trimIndent()
@@ -39,24 +48,34 @@ open class JmhTest {
     @Benchmark
     @Setup
     fun build() {
-        root = rootJsonObject {
+        root = rootJsonObject(requiredByDefault = true) {
             "abc" string {
-                required
                 maxLength = 9
                 lengthRange = 1..10
                 test { length in 1..12 }
             }
 
             "cde" jsonObject {
-                required
-
                 any {
-                    "123" string {
-                        required
-                    }
+                    "123" string {}
+                    "456" boolean { expected = true }
+                }
 
-                    "456" boolean {
-                        expected = true
+                "789" jsonObject {
+                    any {
+                        "t" string { expected("something") }
+                        "T" string { expected("everything", "something") }
+                    }
+                }
+
+                "101" jsonObject {
+                    "something" string { lengthRange = 2..4 }
+                    "anything" jsonObject {
+                        "anything" jsonObject {
+                            "anything" jsonObject {
+                                "anything" string { expected("anything", "nothing") }
+                            }
+                        }
                     }
                 }
             }
@@ -64,21 +83,36 @@ open class JmhTest {
     }
 
     @Benchmark
-    fun test() {
-        root.test(obj)
-    }
+    fun test(): Boolean = root.final(obj).also { assert(it) }
 
     companion object {
-        private const val dic = "build/reports/jmh"
+        private const val dir = "build/reports/jmh"
+        private const val debug = false
 
+        private val gcFileRegex = Regex("gc(\\.(\\d{4})-(\\d{2})-(\\d{2})_(\\d{2})-(\\d{2})-(\\d{2}))*\\.log")
+
+        @Suppress("ConstantConditionIf")
         @JvmStatic
         fun main(vararg args: String) {
-            Files.createDirectories(Paths.get(dic))
+            if (debug) {
+                val instance = JmhTest()
+                instance.build()
+                println(instance.test())
+                return
+            }
+            val dirPath = Paths.get(dir)
+            Files.createDirectories(dirPath)
+            Files.list(dirPath)
+                .filter { it.fileName.toString().matches(gcFileRegex) }
+                .forEach { Files.delete(it) }
+
             val options = OptionsBuilder()
                 .include(JmhTest::class.java.simpleName)
-                .output("$dic/benchmark.txt")
+                .output("$dir/benchmark.txt")
                 .resultFormat(ResultFormatType.JSON)
-                .result("$dic/results.json")
+                .result("$dir/results.json")
+                .addProfiler(GCProfiler::class.java)
+                .jvmArgsAppend("-Xlog:gc:file=$dir/gc.%t.log")
                 .build()
             Runner(options).run()
         }

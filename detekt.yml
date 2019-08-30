@@ -23,8 +23,7 @@ exceptions:
 
 naming:
     MatchingDeclarationName:
-        active: true
-        excludes: "**/**Internal.kt,**/type/**"
+        active: false
     TopLevelPropertyNaming:
         active: false
 
@@ -35,6 +34,9 @@ potential-bugs:
 style:
     CollapsibleIfStatements:
         active: true
+    MaxLineLength:
+        active: true
+        excludes: "**/util/Exception.kt"
     NestedClassesVisibility:
         active: true
     NewLineAtEndOfFile:

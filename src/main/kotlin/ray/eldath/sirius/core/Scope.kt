@@ -1,6 +1,7 @@
 package ray.eldath.sirius.core
 
 import org.json.JSONObject
+import ray.eldath.sirius.config.SiriusValidationConfig
 import ray.eldath.sirius.core.PredicateBuildInterceptor.jsonObjectIntercept
 import ray.eldath.sirius.type.AnyValidationPredicate
 import ray.eldath.sirius.type.Predicate
@@ -11,7 +12,9 @@ import ray.eldath.sirius.util.ExceptionAssembler
 private const val max = Int.MAX_VALUE
 private val maxRange = 0..max
 
-class JsonObjectValidationScope(override val depth: Int) : ValidationScope<JsonObjectValidationPredicate>(depth) {
+class JsonObjectValidationScope(override val depth: Int, private val config: SiriusValidationConfig) :
+    ValidationScope<JsonObjectValidationPredicate>(depth, config) {
+
     private val children = mutableMapOf<String, AnyValidationPredicate>()
     private val tests = mutableListOf<Predicate<JSONObject>>()
     private var _any: JsonObjectValidationScope? = null
@@ -19,22 +22,22 @@ class JsonObjectValidationScope(override val depth: Int) : ValidationScope<JsonO
     var lengthRange = maxRange
 
     infix fun String.string(block: StringValidationScope.() -> Unit) {
-        children += this to jsonObjectIntercept(block, key = this, depth = depth)
+        children += this to jsonObjectIntercept(block, key = this, depth = depth, config = config)
     }
 
     infix fun String.jsonObject(block: JsonObjectValidationScope.() -> Unit) {
-        children += this to jsonObjectIntercept(block, key = this, depth = depth)
+        children += this to jsonObjectIntercept(block, key = this, depth = depth, config = config)
     }
 
     infix fun String.boolean(block: BooleanValidationScope.() -> Unit) {
-        children += this to jsonObjectIntercept(block, key = this, depth = depth)
+        children += this to jsonObjectIntercept(block, key = this, depth = depth, config = config)
     }
 
     fun any(block: JsonObjectValidationScope.() -> Unit) {
         if (_any != null)
             throw ExceptionAssembler.assembleMABE(this, depth)
         else {
-            _any = JsonObjectValidationScope(depth + 1)
+            _any = JsonObjectValidationScope(depth + 1, config)
             _any?.apply(block)
         }
     }
@@ -56,7 +59,9 @@ class JsonObjectValidationScope(override val depth: Int) : ValidationScope<JsonO
     override fun isAssertsValid(): Boolean = lengthRange in maxRange
 }
 
-class BooleanValidationScope(override val depth: Int) : ValidationScope<BooleanValidationPredicate>(depth) {
+class BooleanValidationScope(override val depth: Int, config: SiriusValidationConfig) :
+    ValidationScope<BooleanValidationPredicate>(depth, config) {
+
     var expected = false
         set(value) {
             expectedInitialized = true
@@ -70,7 +75,9 @@ class BooleanValidationScope(override val depth: Int) : ValidationScope<BooleanV
     override fun isAssertsValid(): Boolean = !expectedInitialized
 }
 
-class StringValidationScope(override val depth: Int) : ValidationScope<StringValidationPredicate>(depth) {
+class StringValidationScope(override val depth: Int, config: SiriusValidationConfig) :
+    ValidationScope<StringValidationPredicate>(depth, config) {
+
     private val tests = mutableListOf<Predicate<String>>()
     private val expectedList = mutableListOf<String>()
 
@@ -107,7 +114,9 @@ private operator fun <E : Comparable<E>, T : ClosedRange<E>> T.contains(larger: 
 
 // left due to sealed class's constraint
 @TopClassValidationScopeMarker
-sealed class ValidationScope<T : AnyValidationPredicate>(open val depth: Int) : RequireOption() {
+sealed class ValidationScope<T : AnyValidationPredicate>(open val depth: Int, config: SiriusValidationConfig) :
+    RequireOption(config.requiredByDefault) {
+
     internal abstract fun build(): T
     internal abstract fun isAssertsValid(): Boolean
 }
