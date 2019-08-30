@@ -5,13 +5,14 @@ import ray.eldath.sirius.core.Asserts.equals
 import ray.eldath.sirius.core.Asserts.rangeIn
 import ray.eldath.sirius.type.AnyValidationPredicate
 import ray.eldath.sirius.type.Predicate
+import ray.eldath.sirius.type.TopPredicate
 import ray.eldath.sirius.util.ExceptionAssembler.VFEAssembler
 import ray.eldath.sirius.util.ExceptionAssembler.assembleJsonObjectMEE
 import ray.eldath.sirius.util.SiriusValidationException
 import ray.eldath.sirius.util.Util
 
 // overridden values should be prefixed for named argument
-data class StringValidationPredicate(
+class StringValidationPredicate(
     override val required: Boolean,
     override val tests: List<Predicate<String>>,
     override val depth: Int,
@@ -24,7 +25,7 @@ data class StringValidationPredicate(
     override fun toString(): String = Util.reflectionToStringWithStyle(this)
 }
 
-data class BooleanValidationPredicate(
+class BooleanValidationPredicate(
     override val required: Boolean,
     override val depth: Int,
     val expected: Boolean
@@ -34,20 +35,26 @@ data class BooleanValidationPredicate(
         assertsOf(tests, equals(expected = expected, actual = value))
 }
 
-data class JsonObjectValidationPredicate(
+class JsonObjectValidationPredicate(
     override val required: Boolean,
     override val tests: List<Predicate<JSONObject>> = emptyList(),
     override val depth: Int,
     val lengthRange: IntRange = 0..Int.MAX_VALUE,
     val children: Map<String, AnyValidationPredicate> = emptyMap(),
     val any: JsonObjectValidationScope? = null
-) : ValidationPredicate<JSONObject>(required, tests, depth) {
+) : ValidationPredicate<JSONObject>(required, tests, depth), TopPredicate<JSONObject> {
 
     // checkpoint
+    override fun final(value: JSONObject): Boolean {
+        val wrapper = this.test(value)
+        testAsserts(wrapper.asserts, "[root]", this)
+        return testTests(wrapper.tests, this, "[root]", value)
+    }
+
     override fun test(value: JSONObject): AssertWrapper<JSONObject> {
         if (any != null)
             testAnyBlock(value, any.build())
-        children.entries.forEach { testChildrenEntry(value, it) }
+        children.entries.forEach { testChildrenPredicate(value, it) }
         return assertsOf(tests, rangeIn(lengthRange, value.length()))
     }
 
@@ -56,7 +63,7 @@ data class JsonObjectValidationPredicate(
         var counter = 0
         entries.forEach {
             try {
-                testChildrenEntry(obj, it)
+                testChildrenPredicate(obj, it)
             } catch (e: SiriusValidationException) {
                 counter += 1
             }
@@ -66,7 +73,7 @@ data class JsonObjectValidationPredicate(
             throw VFEAssembler.anyBlock(depth)
     }
 
-    private fun testChildrenEntry(obj: JSONObject, entry: Map.Entry<String, AnyValidationPredicate>) {
+    private fun testChildrenPredicate(obj: JSONObject, entry: Map.Entry<String, AnyValidationPredicate>) {
         val key = entry.key
         val predicate = entry.value
 
@@ -84,21 +91,25 @@ data class JsonObjectValidationPredicate(
 
     private fun <T> testChildrenAsserts(key: String, element: T, predicate: ValidationPredicate<T>): Unit =
         predicate.test(element).run {
-            tests.forEachIndexed { index, test ->
-                if (!test(element))
-                    throw VFEAssembler.lambda(index + 1, predicate, key, depth)
-            }
-            asserts.forEach { testAssert(it, key, predicate) }
+            testTests(tests, predicate, key, element)
+            testAsserts(asserts, key, predicate)
         }
 
-    private fun testAssert(assert: AnyAssert, key: String, predicate: AnyValidationPredicate) {
-        if (!assert.test())
-            throw when (assert) {
-                is RangeAssert<*> -> VFEAssembler.range(assert, predicate, key, depth)
-                is ContainAssert -> VFEAssembler.contain(assert, predicate, key, depth)
-                is EqualAssert -> VFEAssembler.equal(assert, predicate, key, depth)
-            }
-    }
+    private fun <T> testTests(tests: List<Predicate<T>>, predicate: ValidationPredicate<T>, key: String, element: T) =
+        tests.forEachIndexed { index, test ->
+            if (!test(element))
+                throw VFEAssembler.lambda(index + 1, predicate, key, depth)
+        }.let { true }
+
+    private fun testAsserts(asserts: List<AnyAssert>, key: String, predicate: AnyValidationPredicate): Unit =
+        asserts.forEach {
+            if (!it.test())
+                throw when (it) {
+                    is RangeAssert<*> -> VFEAssembler.range(it, predicate, key, depth)
+                    is ContainAssert -> VFEAssembler.contain(it, predicate, key, depth)
+                    is EqualAssert -> VFEAssembler.equal(it, predicate, key, depth)
+                }
+        }
 
     override fun toString(): String = Util.reflectionToStringWithStyle(this)
 }

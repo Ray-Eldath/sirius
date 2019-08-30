@@ -41,6 +41,6 @@ object Test {
         val obj = (JSONTokener(json)).nextValue() as JSONObject
 
         println(root)
-        println(root.test(obj))
+        println(root.final(obj))
     }
 }

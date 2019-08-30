@@ -42,11 +42,11 @@ detekt {
     }
 }
 
-task execute(type: JavaExec) {
+task jmh(type: JavaExec) {
     main = 'ray.eldath.sirius.test.jmh.JmhTest'
     classpath = sourceSets.test.runtimeClasspath
 }
-execute.finalizedBy tasks.findByName('jmhReport')
+jmh.finalizedBy tasks.findByName('jmhReport')
 
 test {
     useJUnitPlatform()

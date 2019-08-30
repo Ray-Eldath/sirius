@@ -1,5 +1,6 @@
 package ray.eldath.sirius.core
 
+import org.json.JSONObject
 import ray.eldath.sirius.core.PredicateBuildInterceptor.jsonObjectIntercept
 import ray.eldath.sirius.type.AnyValidationPredicate
 import ray.eldath.sirius.type.Predicate
@@ -12,6 +13,7 @@ private val maxRange = 0..max
 
 class JsonObjectValidationScope(override val depth: Int) : ValidationScope<JsonObjectValidationPredicate>(depth) {
     private val children = mutableMapOf<String, AnyValidationPredicate>()
+    private val tests = mutableListOf<Predicate<JSONObject>>()
     private var _any: JsonObjectValidationScope? = null
 
     var length = maxRange
@@ -37,8 +39,13 @@ class JsonObjectValidationScope(override val depth: Int) : ValidationScope<JsonO
         }
     }
 
+    fun test(predicate: Predicate<JSONObject>) {
+        tests += predicate
+    }
+
     override fun build(): JsonObjectValidationPredicate =
         JsonObjectValidationPredicate(
+            tests = this.tests,
             children = this.children,
             lengthRange = this.length,
             required = this.isRequired,

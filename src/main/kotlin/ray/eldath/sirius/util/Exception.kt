@@ -16,6 +16,7 @@ internal sealed class SiriusValidationException(override val message: String) : 
         internal class MultipleAnyBlockException(override val message: String) : InvalidSchemaException(message)
     }
 
+    internal class InvalidFinalCallException(override val message: String) : SiriusValidationException(message)
     internal class ValidationFailedException(override val message: String) : SiriusValidationException(message)
     internal class MissingRequiredElementException(override val message: String) : SiriusValidationException(message)
 }
@@ -54,11 +55,11 @@ internal object ExceptionAssembler {
         private fun assembleJsonObjectK(
             name: String,
             element: AnyValidationPredicate,
-            key: String = "",
+            key: String,
             depth: Int
         ): String {
-            val k = assembleKeyT(element, key)
-            return "[JsonObject] $name validation failed for JsonObject element at $k at ${assembleDepth(depth)}"
+            val t = assembleKeyT(element, key)
+            return "[JsonObject] $name validation failed for JsonObject element at $t at ${assembleDepth(depth)}"
         }
     }
 
