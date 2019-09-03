@@ -8,8 +8,11 @@ internal object Asserts {
     internal fun <T : Comparable<T>> range(propertyName: String, bigger: Range<T>, value: Range<T>) =
         RangeAssert(bigger, value, propertyName)
 
-    internal fun <T : Comparable<T>> rangeIn(propertyName: String, range: Range<T>, value: T) =
-        RangeAssert(range, value..value, propertyName)
+    internal fun <T : Comparable<T>> rangeIn(propertyName: String, range: Range<T>, value: T): AnyAssert =
+        if (range.start == range.endInclusive)
+            equals(propertyName, range.start, value)
+        else
+            RangeAssert(range, value..value, propertyName)
 
     internal fun <T> contain(propertyName: String, container: Iterable<T>, element: T) =
         ContainAssert(element, container, propertyName)

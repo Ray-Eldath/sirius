@@ -13,13 +13,11 @@ private const val max = Int.MAX_VALUE
 private val maxRange = 0..max
 
 class JsonObjectValidationScope(override val depth: Int, private val config: SiriusValidationConfig) :
-    ValidationScope<JsonObjectValidationPredicate>(depth, config) {
+    ValidationScopeWithLengthProperty<JsonObjectValidationPredicate>(depth, config) {
 
     private val children = mutableMapOf<String, AnyValidationPredicate>()
     private val tests = mutableListOf<Predicate<JSONObject>>()
     private var _any: JsonObjectValidationScope? = null
-
-    var lengthRange = maxRange
 
     infix fun String.string(block: StringValidationScope.() -> Unit) {
         children += this to jsonObjectIntercept(block, key = this, depth = depth, config = config)
@@ -48,10 +46,10 @@ class JsonObjectValidationScope(override val depth: Int, private val config: Sir
 
     override fun build(): JsonObjectValidationPredicate =
         JsonObjectValidationPredicate(
-            tests = this.tests,
-            children = this.children,
-            lengthRange = this.lengthRange,
-            required = this.isRequired,
+            tests = tests,
+            children = children,
+            lengthRange = this.buildRange(), // inherit
+            required = isRequired,
             depth = depth,
             any = _any
         )
@@ -76,15 +74,10 @@ class BooleanValidationScope(override val depth: Int, config: SiriusValidationCo
 }
 
 class StringValidationScope(override val depth: Int, config: SiriusValidationConfig) :
-    ValidationScope<StringValidationPredicate>(depth, config) {
+    ValidationScopeWithLengthProperty<StringValidationPredicate>(depth, config) {
 
     private val tests = mutableListOf<Predicate<String>>()
     private val expectedList = mutableListOf<String>()
-
-    var lengthRange = 0..max
-
-    var minLength = 0
-    var maxLength = max
 
     fun expected(vararg expected: String) {
         if (expected.size == 1)
@@ -99,7 +92,7 @@ class StringValidationScope(override val depth: Int, config: SiriusValidationCon
     override fun build(): StringValidationPredicate =
         StringValidationPredicate(
             expectedValue = expectedList,
-            lengthRange = if (lengthRange != maxRange) lengthRange else minLength..maxLength,
+            lengthRange = this.buildRange(),
             required = isRequired,
             tests = tests,
             depth = depth
@@ -119,4 +112,23 @@ sealed class ValidationScope<T : AnyValidationPredicate>(open val depth: Int, co
 
     internal abstract fun build(): T
     internal abstract fun isAssertsValid(): Boolean
+}
+
+
+sealed class ValidationScopeWithLengthProperty<T : AnyValidationPredicate>(
+    override val depth: Int,
+    config: SiriusValidationConfig
+) : ValidationScope<T>(depth, config) {
+    var lengthExact = 0
+    var lengthRange = 0..max
+
+    var minLength = 0
+    var maxLength = max
+
+    fun buildRange(): IntRange =
+        when {
+            lengthExact != 0 -> lengthExact..lengthExact
+            lengthRange != maxRange -> lengthRange
+            else -> minLength..maxLength
+        }
 }

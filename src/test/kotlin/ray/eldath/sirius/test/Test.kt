@@ -9,8 +9,7 @@ object Test {
     fun main(args: Array<String>) {
         val root = rootJsonObject(requiredByDefault = true) {
             "abc" string {
-                maxLength = 9
-                lengthRange = 1..10
+                lengthExact = 10
                 test { length in 1..12 }
             }
 
