@@ -13,6 +13,7 @@ import ray.eldath.sirius.util.ExceptionAssembler.assembleJsonObjectMEE
 import ray.eldath.sirius.util.ExceptionAssembler.assembleJsonObjectNPE
 import ray.eldath.sirius.util.SiriusException
 import ray.eldath.sirius.util.Util
+import ray.eldath.sirius.util.ValidationException
 
 // overridden values should be prefixed for named argument
 class StringValidationPredicate(
@@ -91,22 +92,20 @@ class JsonObjectValidationPredicate(
     private fun testChildrenPredicate(obj: JSONObject, entry: Map.Entry<String, AnyValidationPredicate>) {
         val key = entry.key
         val predicate = entry.value
+        val isNull = obj.isNull(key)
 
-        if (!obj.has(key))
-            if (predicate.required)
-                throw assembleJsonObjectMEE(predicate, key, depth)
-            else return
-        else if (obj.isNull(key)) {
-            if (!predicate.nullable)
-                throw assembleJsonObjectNPE(predicate, key, depth)
-            else return
-        } else
+        check(!obj.has(key) && predicate.required) { assembleJsonObjectMEE(predicate, key, depth) }
+        check(isNull && !predicate.nullable) { assembleJsonObjectNPE(predicate, key, depth) }
+        if (!isNull)
             when (predicate) {
                 is StringValidationPredicate -> testChildrenAsserts(key, obj.getString(key), predicate)
                 is JsonObjectValidationPredicate -> testChildrenAsserts(key, obj.getJSONObject(key), predicate)
                 is BooleanValidationPredicate -> testChildrenAsserts(key, obj.getBoolean(key), predicate)
             }
     }
+
+    private inline fun check(condition: Boolean, throws: () -> ValidationException) =
+        if (condition) throw throws() else Unit
 
     private fun <T> testChildrenAsserts(key: String, element: T, predicate: ValidationPredicate<T>): Unit =
         predicate.test(element).run {
@@ -117,16 +116,16 @@ class JsonObjectValidationPredicate(
     private fun <T> testTests(tests: List<Predicate<T>>, predicate: ValidationPredicate<T>, key: String, element: T) =
         tests.forEachIndexed { index, test ->
             if (!test(element))
-                throw IVEAssembler.lambda(index + 1, predicate, "[test block]", depth, key)
+                throw IVEAssembler.lambda(index + 1, predicate, depth, key)
         }.let { true }
 
     private fun testAsserts(asserts: List<AnyAssert>, key: String, predicate: AnyValidationPredicate) =
         asserts.forEach {
             if (!it.test())
                 throw when (it) {
-                    is RangeAssert<*> -> IVEAssembler.range(it, predicate, it.propertyName, depth, key)
-                    is ContainAssert -> IVEAssembler.contain(it, predicate, it.propertyName, depth, key)
-                    is EqualAssert -> IVEAssembler.equal(it, predicate, it.propertyName, depth, key)
+                    is RangeAssert<*> -> IVEAssembler.range(it, predicate, depth, key)
+                    is ContainAssert -> IVEAssembler.contain(it, predicate, depth, key)
+                    is EqualAssert -> IVEAssembler.equal(it, predicate, depth, key)
                 }
         }.let { true }
 

@@ -6,8 +6,6 @@
 # Ignore Gradle GUI config
 gradle-app.setting
 
-/gradle
-
 # Cache of project
 .gradletasknamecache
 
@@ -29,6 +27,7 @@ gradle-app.setting
 
 # Package Files #
 *.jar
+!/gradle/wrapper/gradle-wrapper.jar
 *.war
 *.nar
 *.ear

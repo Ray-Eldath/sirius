@@ -1,5 +1,9 @@
 # sirius
 
+[![phosphorus](https://forthebadge.com/images/badges/built-with-love.svg)](https://forthebadge.com)  [![forthebadge](https://forthebadge.com/images/badges/contains-technical-debt.svg)](https://forthebadge.com)
+
+[![CodeFactor Grade](https://img.shields.io/codefactor/grade/github/Ray-Eldath/sirius/master?style=flat-square)](https://www.codefactor.io/repository/github/ray-eldath/sirius)
+
 :construction: (WIP) Type-safe, lightweight JSON validator with Kotlin DSL.
 
 > Still work in progress, star & watch for further information information? :-)
@@ -22,3 +26,9 @@
  - [ ] JUnit test
  - [ ] Continuous Integration (CI)
  - [ ] (?) SemVer & SemRelease
+ 
+## Acknowledgement
+
+This project is developed with IntelliJ IDEA Ultimate and the subscription is obtained freely from [Jetbrains Open Source Support Program](https://www.jetbrains.com/community/opensource/). Thanks to Jetbrains!
+
+[![Jetbrains logo](/img/jetbrains-variant-4.jpg)](https://www.jetbrains.com/?from=sirius)

@@ -51,6 +51,7 @@ jmh.finalizedBy tasks.findByName('jmhReport')
 test {
     useJUnitPlatform()
     exclude('**/experiment/**')
+    exclude('**/jmh/**')
 }
 
 repositories {

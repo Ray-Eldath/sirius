@@ -14,9 +14,9 @@ object Test {
             "cde" jsonObject {
                 "123" string { expected("123", "456") }
                 "456" boolean {
-                    nullable
+                    nonnull
                     optional
-                    expected = true
+                    expected = false
                 }
             }
         }
