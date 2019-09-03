@@ -16,7 +16,7 @@ ij_smart_tabs = false
 ij_wrap_on_typing = false
 
 [Exception.kt]
-max_line_length = 150
+max_line_length = 160
 
 [*.java]
 ij_java_align_consecutive_assignments = false

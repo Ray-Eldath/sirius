@@ -1,7 +1,5 @@
 package ray.eldath.sirius.test
 
-import org.json.JSONObject
-import org.json.JSONTokener
 import ray.eldath.sirius.api.rootJsonObject
 
 object Test {
@@ -16,6 +14,7 @@ object Test {
             "cde" jsonObject {
                 "123" string { expected("123", "456") }
                 "456" boolean {
+                    nullable
                     optional
                     expected = true
                 }
@@ -26,13 +25,12 @@ object Test {
             {
                 "abc": "1234567890",
                 "cde": {
-                    "123": "123"
+                    "123": "123",
+                    "456": null
                 }
             }
         """.trimIndent()
-        val obj = (JSONTokener(json)).nextValue() as JSONObject
-
         println(root)
-        println(root.final(obj))
+        println(root.final(json))
     }
 }

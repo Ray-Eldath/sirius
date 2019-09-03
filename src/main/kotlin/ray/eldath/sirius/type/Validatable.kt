@@ -4,6 +4,7 @@ import ray.eldath.sirius.core.*
 
 enum class Validatable(val displayName: String) {
     JSON_OBJECT("JsonObject"),
+    JSON_ARRAY("JsonArray"),
     BOOLEAN("boolean"),
     STRING("string");
 

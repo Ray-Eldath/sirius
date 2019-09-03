@@ -4,8 +4,8 @@ import org.json.JSONObject
 import ray.eldath.sirius.config.SiriusValidationConfig
 import ray.eldath.sirius.core.PredicateBuildInterceptor.jsonObjectIntercept
 import ray.eldath.sirius.type.AnyValidationPredicate
+import ray.eldath.sirius.type.BasicOption
 import ray.eldath.sirius.type.Predicate
-import ray.eldath.sirius.type.RequireOption
 import ray.eldath.sirius.type.TopClassValidationScopeMarker
 import ray.eldath.sirius.util.ExceptionAssembler
 
@@ -15,7 +15,7 @@ private val maxRange = 0..max
 class JsonObjectValidationScope(override val depth: Int, private val config: SiriusValidationConfig) :
     ValidationScopeWithLengthProperty<JsonObjectValidationPredicate>(depth, config) {
 
-    private val children = mutableMapOf<String, AnyValidationPredicate>()
+    private val children = hashMapOf<String, AnyValidationPredicate>()
     private val tests = mutableListOf<Predicate<JSONObject>>()
     private var _any: JsonObjectValidationScope? = null
 
@@ -50,6 +50,7 @@ class JsonObjectValidationScope(override val depth: Int, private val config: Sir
             children = children,
             lengthRange = this.buildRange(), // inherit
             required = isRequired,
+            nullable = isNullable,
             depth = depth,
             any = _any
         )
@@ -68,7 +69,7 @@ class BooleanValidationScope(override val depth: Int, config: SiriusValidationCo
 
     private var expectedInitialized = false
 
-    override fun build(): BooleanValidationPredicate = BooleanValidationPredicate(isRequired, depth, expected)
+    override fun build() = BooleanValidationPredicate(isRequired, isNullable, depth, expected)
 
     override fun isAssertsValid(): Boolean = !expectedInitialized
 }
@@ -94,6 +95,7 @@ class StringValidationScope(override val depth: Int, config: SiriusValidationCon
             expectedValue = expectedList,
             lengthRange = this.buildRange(),
             required = isRequired,
+            nullable = isNullable,
             tests = tests,
             depth = depth
         )
@@ -108,12 +110,11 @@ private operator fun <E : Comparable<E>, T : ClosedRange<E>> T.contains(larger: 
 // left due to sealed class's constraint
 @TopClassValidationScopeMarker
 sealed class ValidationScope<T : AnyValidationPredicate>(open val depth: Int, config: SiriusValidationConfig) :
-    RequireOption(config.requiredByDefault) {
+    BasicOption(config.requiredByDefault, config.nullableByDefault) {
 
     internal abstract fun build(): T
     internal abstract fun isAssertsValid(): Boolean
 }
-
 
 sealed class ValidationScopeWithLengthProperty<T : AnyValidationPredicate>(
     override val depth: Int,

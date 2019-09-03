@@ -1,7 +1,5 @@
 package ray.eldath.sirius.test.jmh
 
-import org.json.JSONObject
-import org.json.JSONTokener
 import org.openjdk.jmh.annotations.*
 import org.openjdk.jmh.profile.GCProfiler
 import org.openjdk.jmh.results.format.ResultFormatType
@@ -21,10 +19,7 @@ import java.util.concurrent.TimeUnit
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
 @State(Scope.Benchmark)
 open class JmhTest {
-    private val obj: JSONObject
-
-    init {
-        val json = """
+    private val json: String = """
             {
                 "abc": "1234567890",
                 "cde": {
@@ -40,8 +35,6 @@ open class JmhTest {
                 }
             }
         """.trimIndent()
-        obj = (JSONTokener(json)).nextValue() as JSONObject
-    }
 
     private lateinit var root: JsonObjectValidationPredicate
 
@@ -83,7 +76,7 @@ open class JmhTest {
     }
 
     @Benchmark
-    fun test(): Boolean = root.final(obj).also { assert(it) }
+    fun test(): Boolean = root.final(json).also { assert(it) }
 
     companion object {
         private const val dir = "build/reports/jmh"
