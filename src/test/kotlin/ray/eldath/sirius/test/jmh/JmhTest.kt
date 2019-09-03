@@ -15,7 +15,7 @@ import java.util.concurrent.TimeUnit
 @Fork(2)
 @Threads(1)
 @Warmup(iterations = 2, time = 8)
-@Measurement(iterations = 4, time = 6)
+@Measurement(iterations = 4, time = 10)
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
 @State(Scope.Benchmark)
 open class JmhTest {
