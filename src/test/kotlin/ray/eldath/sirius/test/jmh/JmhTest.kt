@@ -1,5 +1,7 @@
 package ray.eldath.sirius.test.jmh
 
+import org.json.JSONObject
+import org.json.JSONTokener
 import org.openjdk.jmh.annotations.*
 import org.openjdk.jmh.profile.GCProfiler
 import org.openjdk.jmh.results.format.ResultFormatType
@@ -14,8 +16,8 @@ import java.util.concurrent.TimeUnit
 @BenchmarkMode(Mode.Throughput)
 @Fork(2)
 @Threads(1)
-@Warmup(iterations = 2, time = 8)
-@Measurement(iterations = 4, time = 10)
+@Warmup(iterations = 2, time = 4)
+@Measurement(iterations = 4, time = 5)
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
 @State(Scope.Benchmark)
 open class JmhTest {
@@ -24,6 +26,8 @@ open class JmhTest {
                 "abc": "1234567890",
                 "cde": {
                     "456": true,
+                    "202": "pr_1234_ends",
+                    "303": null,
                     "789": {
                         "t": "nothing",
                         "T": "everything"
@@ -37,6 +41,7 @@ open class JmhTest {
         """.trimIndent()
 
     private lateinit var root: JsonObjectValidationPredicate
+    private lateinit var jsonObject: JSONObject
 
     @Benchmark
     @Setup
@@ -49,6 +54,12 @@ open class JmhTest {
             }
 
             "cde" jsonObject {
+                "202" string {
+                    test { startsWith("pre_") || endsWith("_ends") }
+                }
+
+                "303" boolean { nullable }
+
                 any {
                     "123" string {}
                     "456" boolean { expected = true }
@@ -76,6 +87,15 @@ open class JmhTest {
     }
 
     @Benchmark
+    @Setup
+    fun parse() {
+        jsonObject = JSONTokener(json).nextValue() as JSONObject
+    }
+
+    @Benchmark
+    fun pureTest(): Boolean = root.final(jsonObject).also { assert(it) }
+
+    @Benchmark
     fun test(): Boolean = root.final(json).also { assert(it) }
 
     companion object {
@@ -90,7 +110,10 @@ open class JmhTest {
             if (debug) {
                 val instance = JmhTest()
                 instance.build()
-                println(instance.test())
+                instance.test().also {
+                    println(it)
+                    assert(it)
+                }
                 return
             }
             val dirPath = Paths.get(dir)

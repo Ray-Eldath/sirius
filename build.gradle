@@ -45,6 +45,7 @@ detekt {
 task jmh(type: JavaExec) {
     main = 'ray.eldath.sirius.test.jmh.JmhTest'
     classpath = sourceSets.test.runtimeClasspath
+    defaultCharacterEncoding = 'UTF-8'
 }
 jmh.finalizedBy tasks.findByName('jmhReport')
 

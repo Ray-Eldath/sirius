@@ -54,13 +54,13 @@ class JsonObjectValidationPredicate(
     val lengthRange: IntRange = 0..Int.MAX_VALUE,
     val children: Map<String, AnyValidationPredicate> = emptyMap(),
     val any: JsonObjectValidationScope? = null
-) : ValidationPredicate<JSONObject>(required, nullable, tests, depth), TopPredicate {
+) : ValidationPredicate<JSONObject>(required, nullable, tests, depth), TopPredicate<JSONObject> {
 
     // checkpoint
-    override fun final(topTypeString: String): Boolean =
-        ((JSONTokener(topTypeString).nextValue()) as JSONObject).run(::finalPrivate)
+    override fun final(value: String): Boolean =
+        ((JSONTokener(value).nextValue()) as JSONObject).run(::final)
 
-    private fun finalPrivate(value: JSONObject): Boolean {
+    override fun final(value: JSONObject): Boolean {
         val wrapper = this.test(value)
         testTests(wrapper.tests, this, "[jsonObject]", value)
         return testAsserts(wrapper.asserts, "[jsonObject]", this)

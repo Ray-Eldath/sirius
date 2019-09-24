@@ -37,8 +37,6 @@ The first graph is about throughput, which shows the number of times that the op
 
 ![Performance: Allocation Rate per operation](img/perf-ar-norm.jpg)
 
-The performance data, IMHO, is perfectly acceptable.
-
 
 Related code are in `/src/test/kotlin/jmh` folder.
 
