@@ -8,7 +8,11 @@ import ray.eldath.sirius.type.AnyValidationScope
 import ray.eldath.sirius.type.Validatable
 import ray.eldath.sirius.type.Validatable.JSON_ARRAY
 import ray.eldath.sirius.type.Validatable.JSON_OBJECT
+import ray.eldath.sirius.util.InvalidSchemaException.InvalidAssertException
 import ray.eldath.sirius.util.InvalidSchemaException.MultipleAnyBlockException
+import ray.eldath.sirius.util.InvalidValueException.NullPointerException
+import ray.eldath.sirius.util.ValidationException.MissingRequiredElementException
+import ray.eldath.sirius.util.ValidationException.TypeMismatchException
 
 // exceptions should be public
 sealed class SiriusException(override val message: String) : Exception(message)
@@ -20,6 +24,7 @@ sealed class InvalidSchemaException(override val message: String) : SiriusExcept
 
 sealed class ValidationException(override val message: String) : SiriusException(message) {
     class MissingRequiredElementException(override val message: String) : ValidationException(message)
+    class TypeMismatchException(override val message: String) : ValidationException(message)
 }
 
 open class InvalidValueException(override val message: String) : ValidationException(message) {
@@ -29,7 +34,7 @@ open class InvalidValueException(override val message: String) : ValidationExcep
 internal object ExceptionAssembler {
     internal object IVEAssembler {
         fun anyBlock(depth: Int, label: Validatable = JSON_OBJECT) =
-            IVE("[${label.displayName}] all validation failed in [any block] defined for ${label.displayName} at ${assembleDepth(depth)}")
+            IVE("[${label.displayName}] all validation failed in [any block] defined for ${label.displayName} at ${depth(depth)}")
 
         fun equal(assert: EqualAssert<*>, element: AnyValidationPredicate, depth: Int, vararg args: Any, label: Validatable = JSON_OBJECT) = IVE(
             assembleK("equal", assert.propertyName, element, depth, label, args) +
@@ -61,7 +66,7 @@ internal object ExceptionAssembler {
             return when (label) {
                 JSON_OBJECT -> {
                     require(args.size == 1 && args[0] is String)
-                    assembleJsonObjectK(type, propertyName, element, args[0] as String, depth)
+                    jsonObjectExceptionHeader(type, propertyName, element, args[0] as String, depth)
                 }
                 JSON_ARRAY -> {
                     require(args.isEmpty())
@@ -71,28 +76,34 @@ internal object ExceptionAssembler {
             }
         }
 
-        private fun assembleJsonObjectK(
-            type: String, propertyName: String, element: AnyValidationPredicate, key: String, depth: Int
-        ): String {
-            val t = assembleKeyT(element, key)
-            val d = assembleDepth(depth)
+        private fun jsonObjectExceptionHeader(type: String, propertyName: String, element: AnyValidationPredicate, key: String, depth: Int): String {
+            val t = keyName(element, key)
+            val d = depth(depth)
             return "[JsonObject] $type validation of property \"$propertyName\" failed for JsonObject element at $t at $d"
         }
     }
 
-    internal fun assembleMABE(scope: AnyValidationScope, depth: Int): MultipleAnyBlockException =
-        MultipleAnyBlockException("[${name(scope)}] only one any{} block could provided at ${assembleDepth(depth) + 1}")
+    internal fun multipleAnyBlock(scope: AnyValidationScope, depth: Int): MultipleAnyBlockException =
+        MultipleAnyBlockException("[${name(scope)}] only one any{} block could provided at ${depth(depth) + 1}")
 
-    internal fun assembleJsonObjectIAE(scope: AnyValidationScope, key: String, depth: Int): IAE =
-        IAE("[JsonObject] assert validation failed at ${assembleKeyT(scope, key)} at ${assembleDepth(depth)}")
+    internal fun jsonObjectTypeMismatch(element: AnyValidationPredicate, key: String, depth: Int, actual: Any) =
+        Validatable.fromPredicate(element).actualType.javaObjectType.simpleName.let {
+            TypeMismatchException(
+                "[JsonObject] type mismatch at ${keyName(element, key)} at ${depth(depth)}" +
+                        "\n trace: ${actual.javaClass.simpleName}(actual) should be $it(expected)"
+            )
+        }
 
-    internal fun assembleJsonObjectMEE(element: AnyValidationPredicate, key: String, depth: Int): MEE =
-        MEE("[JsonObject] missing required element ${assembleKeyT(element, key)} at ${assembleDepth(depth)}")
+    internal fun jsonObjectInvalidAssert(scope: AnyValidationScope, key: String, depth: Int) =
+        InvalidAssertException("[JsonObject] assert validation failed at ${keyName(scope, key)} at ${depth(depth)}")
 
-    internal fun assembleJsonObjectNPE(element: AnyValidationPredicate, key: String, depth: Int) =
-        NPE("[JsonObject] non-null element ${assembleKeyT(element, key)} at ${assembleDepth(depth)} is set to `null`")
+    internal fun jsonObjectMissingRequiredElement(element: AnyValidationPredicate, key: String, depth: Int) =
+        MissingRequiredElementException("[JsonObject] missing required element ${keyName(element, key)} at ${depth(depth)}")
 
-    private fun assembleKeyT(pOrs: Any, key: String): String {
+    internal fun jsonObjectNPE(element: AnyValidationPredicate, key: String, depth: Int) =
+        NullPointerException("[JsonObject] non-null element ${keyName(element, key)} at ${depth(depth)} is set to `null`")
+
+    private fun keyName(pOrs: Any, key: String): String {
         val t = when (pOrs) {
             is AnyValidationPredicate -> name(pOrs)
             is AnyValidationScope -> name(pOrs)
@@ -104,13 +115,10 @@ internal object ExceptionAssembler {
     private fun name(scope: AnyValidationScope) = Validatable.fromScope(scope).displayName
     private fun name(predicate: AnyValidationPredicate) = Validatable.fromPredicate(predicate).displayName
 
-    private fun assembleDepth(depth: Int) =
+    private fun depth(depth: Int) =
         if (depth == 0)
             "[root]"
         else "[$depth] f${if (depth == 1) "oo" else "ee"}t from root"
 }
 
-internal typealias MEE = ValidationException.MissingRequiredElementException
-internal typealias IAE = InvalidSchemaException.InvalidAssertException
 internal typealias IVE = InvalidValueException
-internal typealias NPE = InvalidValueException.NullPointerException

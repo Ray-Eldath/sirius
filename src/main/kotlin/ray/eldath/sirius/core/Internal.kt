@@ -17,7 +17,7 @@ object PredicateBuildInterceptor {
             .newInstance(d, config)
 
         if (!inst.isAssertsValid())
-            throw ExceptionAssembler.assembleJsonObjectIAE(scope = inst, key = key, depth = d)
+            throw ExceptionAssembler.jsonObjectInvalidAssert(scope = inst, key = key, depth = d)
         return inst.apply(initializer).build()
     }
 }

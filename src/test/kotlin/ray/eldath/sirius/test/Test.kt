@@ -19,6 +19,8 @@ object Test {
                     expected = false
                 }
             }
+
+            "fgh" jsonObject {}
         }
 
         val json = """
@@ -26,8 +28,9 @@ object Test {
                 "abc": "1234567890",
                 "cde": {
                     "123": "123",
-                    "456": null
-                }
+                    "456": false
+                },
+                "fgh": []
             }
         """.trimIndent()
         println(root)

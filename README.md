@@ -18,11 +18,11 @@
    - [ ] String
    - [ ] JSON Object
    - [ ] JSON Array
-   - [ ] `null`
+   - [X] `null`
  - [ ] Documentation for API with [Dokka](https://github.com/Kotlin/dokka)
- - [ ] Validation configuration
+ - [X] Validation configuration
  - [ ] JUnit test
- - [ ] Continuous Integration (CI)
+ - [X] Continuous Integration (CI)
  - [ ] (?) SemVer & SemRelease
 
 ## Performance

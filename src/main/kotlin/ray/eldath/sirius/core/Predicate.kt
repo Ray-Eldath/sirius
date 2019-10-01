@@ -8,9 +8,11 @@ import ray.eldath.sirius.core.Asserts.rangeIn
 import ray.eldath.sirius.type.AnyValidationPredicate
 import ray.eldath.sirius.type.Predicate
 import ray.eldath.sirius.type.TopPredicate
+import ray.eldath.sirius.type.Validatable
 import ray.eldath.sirius.util.ExceptionAssembler.IVEAssembler
-import ray.eldath.sirius.util.ExceptionAssembler.assembleJsonObjectMEE
-import ray.eldath.sirius.util.ExceptionAssembler.assembleJsonObjectNPE
+import ray.eldath.sirius.util.ExceptionAssembler.jsonObjectMissingRequiredElement
+import ray.eldath.sirius.util.ExceptionAssembler.jsonObjectNPE
+import ray.eldath.sirius.util.ExceptionAssembler.jsonObjectTypeMismatch
 import ray.eldath.sirius.util.SiriusException
 import ray.eldath.sirius.util.Util
 import ray.eldath.sirius.util.ValidationException
@@ -89,13 +91,22 @@ class JsonObjectValidationPredicate(
             throw IVEAssembler.anyBlock(depth)
     }
 
+    private fun Any.typeName() = this.javaClass.name
+    private fun AnyValidationPredicate.actualTypeName() = Validatable.fromPredicate(this).actualType.javaObjectType.name
+
     private fun testChildrenPredicate(obj: JSONObject, entry: Map.Entry<String, AnyValidationPredicate>) {
         val key = entry.key
         val predicate = entry.value
         val isNull = obj.isNull(key)
 
-        check(!obj.has(key) && predicate.required) { assembleJsonObjectMEE(predicate, key, depth) }
-        check(isNull && !predicate.nullable) { assembleJsonObjectNPE(predicate, key, depth) }
+        // check existence
+        throwIf(!obj.has(key) && predicate.required) { jsonObjectMissingRequiredElement(predicate, key, depth) }
+        // check nullability
+        throwIf(isNull && !predicate.nullable) { jsonObjectNPE(predicate, key, depth) }
+        // check type
+        obj.get(key).let {
+            throwIf(it.typeName() != predicate.actualTypeName()) { jsonObjectTypeMismatch(predicate, key, depth, it) }
+        }
         if (!isNull)
             when (predicate) {
                 is StringValidationPredicate -> testChildrenAsserts(key, obj.getString(key), predicate)
@@ -104,7 +115,7 @@ class JsonObjectValidationPredicate(
             }
     }
 
-    private inline fun check(condition: Boolean, throws: () -> ValidationException) =
+    private inline fun throwIf(condition: Boolean, throws: () -> ValidationException) =
         if (condition) throw throws() else Unit
 
     private fun <T> testChildrenAsserts(key: String, element: T, predicate: ValidationPredicate<T>): Unit =

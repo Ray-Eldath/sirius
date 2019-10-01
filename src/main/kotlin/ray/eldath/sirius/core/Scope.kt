@@ -33,7 +33,7 @@ class JsonObjectValidationScope(override val depth: Int, private val config: Sir
 
     fun any(block: JsonObjectValidationScope.() -> Unit) {
         if (_any != null)
-            throw ExceptionAssembler.assembleMABE(this, depth)
+            throw ExceptionAssembler.multipleAnyBlock(this, depth)
         else {
             _any = JsonObjectValidationScope(depth + 1, config)
             _any?.apply(block)
