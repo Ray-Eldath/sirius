@@ -22,5 +22,5 @@ object PredicateBuildInterceptor {
     }
 }
 
-internal fun <T> assertsOf(tests: List<Predicate<T>> = emptyList(), vararg asserts: AnyAssert) =
+internal fun <T> assertsOf(tests: Map<String, Predicate<T>> = emptyMap(), vararg asserts: AnyAssert) =
     AssertWrapper(asserts.toList(), tests)

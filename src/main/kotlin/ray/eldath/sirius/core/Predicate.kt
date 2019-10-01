@@ -21,7 +21,7 @@ import ray.eldath.sirius.util.ValidationException
 class StringValidationPredicate(
     override val required: Boolean,
     override val nullable: Boolean,
-    override val tests: List<Predicate<String>>,
+    override val tests: Map<String, Predicate<String>> = emptyMap(),
     override val depth: Int,
     val lengthRange: IntRange = 0..Int.MAX_VALUE,
     val expectedValue: List<String>
@@ -51,7 +51,7 @@ class BooleanValidationPredicate(
 class JsonObjectValidationPredicate(
     override val required: Boolean,
     override val nullable: Boolean,
-    override val tests: List<Predicate<JSONObject>> = emptyList(),
+    override val tests: Map<String, Predicate<JSONObject>> = emptyMap(),
     override val depth: Int,
     val lengthRange: IntRange = 0..Int.MAX_VALUE,
     val children: Map<String, AnyValidationPredicate> = emptyMap(),
@@ -124,10 +124,15 @@ class JsonObjectValidationPredicate(
             testAsserts(asserts, key, predicate)
         }
 
-    private fun <T> testTests(tests: List<Predicate<T>>, predicate: ValidationPredicate<T>, key: String, element: T) =
-        tests.forEachIndexed { index, test ->
+    private fun <T> testTests(
+        tests: Map<String, Predicate<T>>,
+        predicate: ValidationPredicate<T>,
+        key: String,
+        element: T
+    ) =
+        tests.entries.forEachIndexed { index, (purpose, test) ->
             if (!test(element))
-                throw IVEAssembler.lambda(index + 1, predicate, depth, key)
+                throw IVEAssembler.lambda(index + 1, predicate, depth, key, purpose)
         }.let { true }
 
     private fun testAsserts(asserts: List<AnyAssert>, key: String, predicate: AnyValidationPredicate) =
@@ -148,7 +153,7 @@ class JsonObjectValidationPredicate(
 sealed class ValidationPredicate<T>(
     open val required: Boolean = false,
     open val nullable: Boolean = false,
-    open val tests: List<Predicate<T>> = emptyList(),
+    open val tests: Map<String, Predicate<T>> = emptyMap(),
     open val depth: Int
 ) {
     internal abstract fun test(value: T): AssertWrapper<T>

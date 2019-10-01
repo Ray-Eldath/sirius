@@ -13,10 +13,9 @@ private const val max = Int.MAX_VALUE
 private val maxRange = 0..max
 
 class JsonObjectValidationScope(override val depth: Int, private val config: SiriusValidationConfig) :
-    ValidationScopeWithLengthProperty<JsonObjectValidationPredicate>(depth, config) {
+    ValidationScopeWithLengthAndTestsProperty<JSONObject, JsonObjectValidationPredicate>(depth, config) {
 
     private val children = hashMapOf<String, AnyValidationPredicate>()
-    private val tests = mutableListOf<Predicate<JSONObject>>()
     private var _any: JsonObjectValidationScope? = null
 
     infix fun String.string(block: StringValidationScope.() -> Unit) {
@@ -40,13 +39,9 @@ class JsonObjectValidationScope(override val depth: Int, private val config: Sir
         }
     }
 
-    fun test(predicate: Predicate<JSONObject>) {
-        tests += predicate
-    }
-
     override fun build(): JsonObjectValidationPredicate =
         JsonObjectValidationPredicate(
-            tests = tests,
+            tests = this.buildTests(),
             children = children,
             lengthRange = this.buildRange(), // inherit
             required = isRequired,
@@ -75,9 +70,8 @@ class BooleanValidationScope(override val depth: Int, config: SiriusValidationCo
 }
 
 class StringValidationScope(override val depth: Int, config: SiriusValidationConfig) :
-    ValidationScopeWithLengthProperty<StringValidationPredicate>(depth, config) {
+    ValidationScopeWithLengthAndTestsProperty<String, StringValidationPredicate>(depth, config) {
 
-    private val tests = mutableListOf<Predicate<String>>()
     private val expectedList = mutableListOf<String>()
 
     fun expected(vararg expected: String) {
@@ -86,19 +80,41 @@ class StringValidationScope(override val depth: Int, config: SiriusValidationCon
         expectedList += expected
     }
 
-    fun test(predicate: Predicate<String>) {
-        tests += predicate
+    private val allPrefixes = mutableListOf<String>()
+    private var prefixIgnoreCase = false
+    private val allSuffixes = mutableListOf<String>()
+    private var suffixIgnoreCase = false
+
+    fun startsWithAny(vararg prefixes: String, ignoreCase: Boolean = false) {
+        allPrefixes.addAll(prefixes)
+        prefixIgnoreCase = ignoreCase
     }
 
-    override fun build(): StringValidationPredicate =
-        StringValidationPredicate(
+    fun endsWithAny(vararg suffixes: String, ignoreCase: Boolean = false) {
+        allSuffixes.addAll(suffixes)
+        suffixIgnoreCase = ignoreCase
+    }
+
+    override fun build(): StringValidationPredicate {
+        if (allPrefixes.isNotEmpty())
+            test("[built-in] the string must starts with one of the given prefixes") {
+                allPrefixes.any { prefix -> startsWith(prefix, prefixIgnoreCase) }
+            }
+
+        if (allSuffixes.isNotEmpty())
+            test("[built-in] the string must ends with one of the given suffixes") {
+                allSuffixes.any { suffix -> endsWith(suffix, suffixIgnoreCase) }
+            }
+
+        return StringValidationPredicate(
             expectedValue = expectedList,
             lengthRange = this.buildRange(),
             required = isRequired,
             nullable = isNullable,
-            tests = tests,
+            tests = this.buildTests(),
             depth = depth
         )
+    }
 
     override fun isAssertsValid(): Boolean = minLength..maxLength in maxRange && lengthRange in maxRange
 }
@@ -114,6 +130,19 @@ sealed class ValidationScope<T : AnyValidationPredicate>(open val depth: Int, co
 
     internal abstract fun build(): T
     internal abstract fun isAssertsValid(): Boolean
+}
+
+sealed class ValidationScopeWithLengthAndTestsProperty<E, T : ValidationPredicate<E>>(
+    override val depth: Int,
+    config: SiriusValidationConfig
+) : ValidationScopeWithLengthProperty<T>(depth, config) {
+    private val tests = mutableMapOf<String, Predicate<E>>()
+
+    fun test(purpose: String = "", predicate: Predicate<E>) {
+        tests += purpose to predicate
+    }
+
+    fun buildTests() = tests.toMap()
 }
 
 sealed class ValidationScopeWithLengthProperty<T : AnyValidationPredicate>(

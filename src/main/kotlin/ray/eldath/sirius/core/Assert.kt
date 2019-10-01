@@ -44,7 +44,7 @@ internal class EqualAssert<T : Comparable<T>>(val expected: T, val actual: T, ov
 
 internal class AssertWrapper<T>(
     val asserts: List<AnyAssert> = emptyList(),
-    val tests: List<Predicate<T>> = emptyList()
+    val tests: Map<String, Predicate<T>> = emptyMap()
 )
 // may be not as a assert?
 // I wrote this due to I was too sleepy at that time. Apologize.

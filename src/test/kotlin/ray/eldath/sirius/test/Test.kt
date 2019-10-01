@@ -20,7 +20,10 @@ object Test {
                 }
             }
 
-            "fgh" jsonObject {}
+            "fgh" jsonObject {
+                "123" string { startsWithAny("pre", "cre") }
+                "234" string { endsWithAny("5", "4") }
+            }
         }
 
         val json = """
@@ -30,7 +33,10 @@ object Test {
                     "123": "123",
                     "456": false
                 },
-                "fgh": []
+                "fgh": {
+                    "123": "cre_123",
+                    "234": "pre_2234"
+                }
             }
         """.trimIndent()
         println(root)

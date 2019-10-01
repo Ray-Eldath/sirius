@@ -56,7 +56,9 @@ internal object ExceptionAssembler {
         }
 
         fun lambda(index: Int, element: AnyValidationPredicate, depth: Int, vararg args: Any, label: Validatable = JSON_OBJECT): IVE {
-            val trace = "\n trace: the ${index.toOrdinal()} lambda test defined in current scope is failed"
+            require(args.size <= 2)
+            val purpose = if (args.size == 2) "\n\t\tthis lambda test has been tagged with a purpose `${args[1] as String}`.\n" else ""
+            val trace = "\n trace: the ${index.toOrdinal()} lambda test defined in current scope is failed." + purpose
             return IVE(assembleK("lambda", "[test block]", element, depth, label, args) + trace)
         }
 
@@ -65,7 +67,7 @@ internal object ExceptionAssembler {
         ): String {
             return when (label) {
                 JSON_OBJECT -> {
-                    require(args.size == 1 && args[0] is String)
+                    require(args.isNotEmpty() && args[0] is String)
                     jsonObjectExceptionHeader(type, propertyName, element, args[0] as String, depth)
                 }
                 JSON_ARRAY -> {
