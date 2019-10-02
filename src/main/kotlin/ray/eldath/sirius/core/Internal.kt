@@ -1,7 +1,7 @@
 package ray.eldath.sirius.core
 
 import ray.eldath.sirius.config.SiriusValidationConfig
-import ray.eldath.sirius.type.Predicate
+import ray.eldath.sirius.type.LambdaTest
 import ray.eldath.sirius.util.ExceptionAssembler
 
 object PredicateBuildInterceptor {
@@ -22,5 +22,5 @@ object PredicateBuildInterceptor {
     }
 }
 
-internal fun <T> assertsOf(tests: Map<String, Predicate<T>> = emptyMap(), vararg asserts: AnyAssert) =
+internal fun <T> assertsOf(tests: List<LambdaTest<T>> = emptyList(), vararg asserts: AnyAssert) =
     AssertWrapper(asserts.toList(), tests)

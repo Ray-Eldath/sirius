@@ -8,7 +8,7 @@ object Test {
         val root = rootJsonObject(requiredByDefault = true) {
             "abc" string {
                 lengthExact = 10
-                test { length in 1..12 }
+                test { it.length in 1..12 }
             }
 
             "cde" jsonObject {
@@ -22,7 +22,7 @@ object Test {
 
             "fgh" jsonObject {
                 "123" string { startsWithAny("pre", "cre") }
-                "234" string { endsWithAny("5", "4") }
+                "234" string { endsWithAny("4") }
             }
         }
 
@@ -35,7 +35,7 @@ object Test {
                 },
                 "fgh": {
                     "123": "cre_123",
-                    "234": "pre_2234"
+                    "234": "pre_220.34"
                 }
             }
         """.trimIndent()

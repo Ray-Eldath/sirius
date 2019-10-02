@@ -33,6 +33,10 @@ open class InvalidValueException(override val message: String) : ValidationExcep
 
 internal object ExceptionAssembler {
     internal object IVEAssembler {
+        /*
+        args:
+            JSONObject: [key: String]
+         */
         fun anyBlock(depth: Int, label: Validatable = JSON_OBJECT) =
             IVE("[${label.displayName}] all validation failed in [any block] defined for ${label.displayName} at ${depth(depth)}")
 
@@ -55,11 +59,26 @@ internal object ExceptionAssembler {
             )
         }
 
+        /*
+         * args: [key: String, purpose: String, isBuiltIn: Boolean]
+         */
         fun lambda(index: Int, element: AnyValidationPredicate, depth: Int, vararg args: Any, label: Validatable = JSON_OBJECT): IVE {
-            require(args.size <= 2)
-            val purpose = if (args.size == 2) "\n\t\tthis lambda test has been tagged with a purpose `${args[1] as String}`.\n" else ""
-            val trace = "\n trace: the ${index.toOrdinal()} lambda test defined in current scope is failed." + purpose
-            return IVE(assembleK("lambda", "[test block]", element, depth, label, args) + trace)
+            require(args.size in 1..3)
+
+            val isBuiltIn = args.size == 3 && args[1] is String && args[2] is Boolean && args[2] as Boolean
+            val propertyName = (if (isBuiltIn) "[built-in " else "[") + "lambda test]"
+            val purpose =
+                if (args.size == 2 && args[1] is String) // have purpose set but not isn't built-in
+                    "\n\t\tthis lambda test has been tagged with a purpose `${args[1] as String}`.\n"
+                else ""
+
+            val trace =
+                "\n trace: " +
+                        (if (isBuiltIn)
+                            args[1] as String
+                        else "the ${index.toOrdinal()} lambda test defined in current scope is failed.") + purpose
+
+            return IVE(assembleK("lambda", propertyName, element, depth, label, args) + trace)
         }
 
         private fun assembleK(
@@ -68,7 +87,7 @@ internal object ExceptionAssembler {
             return when (label) {
                 JSON_OBJECT -> {
                     require(args.isNotEmpty() && args[0] is String)
-                    jsonObjectExceptionHeader(type, propertyName, element, args[0] as String, depth)
+                    jsonObjectExceptionHeader(type, propertyName, element, args[0] as String /* key: String */, depth)
                 }
                 JSON_ARRAY -> {
                     require(args.isEmpty())
@@ -78,10 +97,11 @@ internal object ExceptionAssembler {
             }
         }
 
-        private fun jsonObjectExceptionHeader(type: String, propertyName: String, element: AnyValidationPredicate, key: String, depth: Int): String {
+        private fun jsonObjectExceptionHeader(type: String, propertyName: String = "", element: AnyValidationPredicate, key: String, depth: Int): String {
             val t = keyName(element, key)
             val d = depth(depth)
-            return "[JsonObject] $type validation of property \"$propertyName\" failed for JsonObject element at $t at $d"
+            val p = if (propertyName.isNotEmpty()) " of property \"$propertyName\"" else ""
+            return "[JsonObject] $type validation failed$p for JsonObject element at $t at $d"
         }
     }
 

@@ -11,6 +11,9 @@ enum class Validatable(val displayName: String, val actualType: KClass<*>) {
     BOOLEAN("boolean", Boolean::class),
     STRING("string", String::class);
 
+    val actualTypeName: String
+        get() = actualType.javaObjectType.name
+
     companion object {
         fun fromPredicate(predicate: AnyValidationPredicate): Validatable =
             when (predicate) {

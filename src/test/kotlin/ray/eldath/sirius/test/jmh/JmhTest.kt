@@ -50,12 +50,12 @@ open class JmhTest {
             "abc" string {
                 maxLength = 9
                 lengthRange = 1..10
-                test { length in 1..12 }
+                test { it.length in 1..12 }
             }
 
             "cde" jsonObject {
                 "202" string {
-                    test { startsWith("pre_") || endsWith("_ends") }
+                    test { it.startsWith("pre_") || it.endsWith("_ends") }
                 }
 
                 "303" boolean { nullable }

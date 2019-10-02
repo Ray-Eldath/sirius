@@ -2,11 +2,10 @@ package ray.eldath.sirius.core
 
 import org.json.JSONObject
 import org.json.JSONTokener
-import ray.eldath.sirius.core.Asserts.contain
 import ray.eldath.sirius.core.Asserts.equals
 import ray.eldath.sirius.core.Asserts.rangeIn
 import ray.eldath.sirius.type.AnyValidationPredicate
-import ray.eldath.sirius.type.Predicate
+import ray.eldath.sirius.type.LambdaTest
 import ray.eldath.sirius.type.TopPredicate
 import ray.eldath.sirius.type.Validatable
 import ray.eldath.sirius.util.ExceptionAssembler.IVEAssembler
@@ -21,17 +20,15 @@ import ray.eldath.sirius.util.ValidationException
 class StringValidationPredicate(
     override val required: Boolean,
     override val nullable: Boolean,
-    override val tests: Map<String, Predicate<String>> = emptyMap(),
+    override val tests: List<LambdaTest<String>> = emptyList(),
     override val depth: Int,
-    val lengthRange: IntRange = 0..Int.MAX_VALUE,
-    val expectedValue: List<String>
+    val lengthRange: IntRange = 0..Int.MAX_VALUE
 ) : ValidationPredicate<String>(required, nullable, tests, depth) {
 
     override fun test(value: String): AssertWrapper<String> =
         assertsOf(
             tests,
-            rangeIn("length", range = lengthRange, value = value.length),
-            contain("value", container = expectedValue, element = value)
+            rangeIn("length", range = lengthRange, value = value.length)
         )
 
     override fun toString(): String = Util.reflectionToStringWithStyle(this)
@@ -51,7 +48,7 @@ class BooleanValidationPredicate(
 class JsonObjectValidationPredicate(
     override val required: Boolean,
     override val nullable: Boolean,
-    override val tests: Map<String, Predicate<JSONObject>> = emptyMap(),
+    override val tests: List<LambdaTest<JSONObject>> = emptyList(),
     override val depth: Int,
     val lengthRange: IntRange = 0..Int.MAX_VALUE,
     val children: Map<String, AnyValidationPredicate> = emptyMap(),
@@ -91,9 +88,6 @@ class JsonObjectValidationPredicate(
             throw IVEAssembler.anyBlock(depth)
     }
 
-    private fun Any.typeName() = this.javaClass.name
-    private fun AnyValidationPredicate.actualTypeName() = Validatable.fromPredicate(this).actualType.javaObjectType.name
-
     private fun testChildrenPredicate(obj: JSONObject, entry: Map.Entry<String, AnyValidationPredicate>) {
         val key = entry.key
         val predicate = entry.value
@@ -105,7 +99,9 @@ class JsonObjectValidationPredicate(
         throwIf(isNull && !predicate.nullable) { jsonObjectNPE(predicate, key, depth) }
         // check type
         obj.get(key).let {
-            throwIf(it.typeName() != predicate.actualTypeName()) { jsonObjectTypeMismatch(predicate, key, depth, it) }
+            throwIf(it.javaClass.name != Validatable.fromPredicate(predicate).actualTypeName) {
+                jsonObjectTypeMismatch(predicate, key, depth, it)
+            }
         }
         if (!isNull)
             when (predicate) {
@@ -125,14 +121,14 @@ class JsonObjectValidationPredicate(
         }
 
     private fun <T> testTests(
-        tests: Map<String, Predicate<T>>,
+        tests: List<LambdaTest<T>>,
         predicate: ValidationPredicate<T>,
         key: String,
         element: T
     ) =
-        tests.entries.forEachIndexed { index, (purpose, test) ->
-            if (!test(element))
-                throw IVEAssembler.lambda(index + 1, predicate, depth, key, purpose)
+        tests.forEachIndexed { index, (lambdaTest, purpose, isBuiltIn) ->
+            if (!lambdaTest(element))
+                throw IVEAssembler.lambda(index + 1, predicate, depth, key, purpose, isBuiltIn)
         }.let { true }
 
     private fun testAsserts(asserts: List<AnyAssert>, key: String, predicate: AnyValidationPredicate) =
@@ -153,7 +149,8 @@ class JsonObjectValidationPredicate(
 sealed class ValidationPredicate<T>(
     open val required: Boolean = false,
     open val nullable: Boolean = false,
-    open val tests: Map<String, Predicate<T>> = emptyMap(),
+    open val tests: List<LambdaTest<T>> = emptyList(),
+    //
     open val depth: Int
 ) {
     internal abstract fun test(value: T): AssertWrapper<T>

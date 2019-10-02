@@ -1,8 +1,6 @@
-@file:Suppress("MemberVisibilityCanBePrivate")
-
 package ray.eldath.sirius.core
 
-import ray.eldath.sirius.type.Predicate
+import ray.eldath.sirius.type.LambdaTest
 
 internal object Asserts {
     internal fun <T : Comparable<T>> range(propertyName: String, bigger: Range<T>, value: Range<T>) =
@@ -44,7 +42,7 @@ internal class EqualAssert<T : Comparable<T>>(val expected: T, val actual: T, ov
 
 internal class AssertWrapper<T>(
     val asserts: List<AnyAssert> = emptyList(),
-    val tests: Map<String, Predicate<T>> = emptyMap()
+    val tests: List<LambdaTest<T>> = emptyList()
 )
 // may be not as a assert?
 // I wrote this due to I was too sleepy at that time. Apologize.
