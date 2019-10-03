@@ -60,6 +60,17 @@ class JsonObjectValidationScope(override val depth: Int, private val config: Sir
         }
     }
 
+    /**
+     * Set a regex pattern that all keys of this JsonObject should match.
+     *
+     * @param regex the regex pattern
+     */
+    fun requireKeyPattern(regex: Regex) {
+        builtInAcceptIf("all keys in the JsonObject should match the given regex $regex") {
+            it.keySet().all { key -> regex.matches(key) }
+        }
+    }
+
     override fun build(): JsonObjectValidationPredicate =
         JsonObjectValidationPredicate(
             tests = this.buildLambdaTests(),
@@ -72,7 +83,7 @@ class JsonObjectValidationScope(override val depth: Int, private val config: Sir
             any = _any
         )
 
-    override fun isAssertsValid(): Boolean = lengthRange in maxRange
+    override fun isAssertsValid(): Boolean = isRangeValid()
 }
 
 class BooleanValidationScope(override val depth: Int, config: SiriusValidationConfig) :
@@ -91,11 +102,8 @@ class BooleanValidationScope(override val depth: Int, config: SiriusValidationCo
     override fun isAssertsValid(): Boolean = !expectedInitialized
 }
 
-class StringValidationScope(override val depth: Int, config: SiriusValidationConfig) :
+class StringValidationScope(override val depth: Int, private val config: SiriusValidationConfig) :
     ValidationScopeWithLengthAndTestsProperty<String, StringValidationPredicate>(depth, config) {
-
-    private var isEmptyAccepted = true
-    private var isAllBlankAccepted = true
 
     val nonEmpty: Unit
         get() {
@@ -107,6 +115,11 @@ class StringValidationScope(override val depth: Int, config: SiriusValidationCon
             builtInAcceptIf("the string must consist of characters except for whitespace") { it.isNotBlank() }
         }
 
+    val noWhitespaceSurrounded: Unit
+        get() {
+            builtInAcceptIf("the string can not have leading or trailing whitespace") { it.trim() == it }
+        }
+
     private val expectedList = mutableListOf<String>()
     private var expectedIgnoreCase = false
 
@@ -116,6 +129,7 @@ class StringValidationScope(override val depth: Int, config: SiriusValidationCon
      * one string is given in any invocation, the string will become the only expected string.
      *
      * That is to say, if you define a scope:
+     *
      * ```kotlin
      * expected("a", "b", "c")
      * expected("d", "e")
@@ -140,6 +154,13 @@ class StringValidationScope(override val depth: Int, config: SiriusValidationCon
         builtInAcceptIf("the string must matches the given regex $regex") { it.matches(regex) }
     }
 
+    // TODO: requireContent
+
+    /**
+     * Require the string is the given case pattern.
+     *
+     * @param case the target case pattern. See: [StringCase]
+     */
     fun requireCase(case: StringCase) {
         val predicate: (String) -> Boolean =
             when (case) {
@@ -147,11 +168,10 @@ class StringValidationScope(override val depth: Int, config: SiriusValidationCon
                 UPPER_CASE -> { str -> StringUtils.isAllUpperCase(str) }
                 PASCAL_CASE -> { str -> str.matches(StringCase.pascalCaseRegex) }
                 CAMEL_CASE -> { str -> str.matches(StringCase.camelCaseRegex) }
+                // TODO: UNDERSCORE_CASE
             }
         builtInAcceptIf("the string must is $case") { StringUtils.isAsciiPrintable(it) && predicate(it) }
     }
-
-    // TODO: 首尾有空格
 
     private val allPrefixes = mutableListOf<String>()
     private var prefixIgnoreCase = false
@@ -181,6 +201,9 @@ class StringValidationScope(override val depth: Int, config: SiriusValidationCon
     }
 
     private fun integrateTests() {
+        if (config.stringNonBlankByDefault) nonBlank
+        if (config.stringNonEmptyByDefault) nonEmpty
+
         if (expectedList.isNotEmpty())
             builtInAcceptIf("the string must literally equal to one of the given string: $expectedList") {
                 expectedList.any { expected -> it == expected }
@@ -209,7 +232,7 @@ class StringValidationScope(override val depth: Int, config: SiriusValidationCon
         )
     }
 
-    override fun isAssertsValid(): Boolean = minLength..maxLength in maxRange && lengthRange in maxRange
+    override fun isAssertsValid(): Boolean = isRangeValid()
 }
 
 private operator fun <E : Comparable<E>, T : ClosedRange<E>> T.contains(larger: T): Boolean =
@@ -231,6 +254,14 @@ sealed class ValidationScopeWithLengthAndTestsProperty<E, T : ValidationPredicat
 ) : ValidationScopeWithLengthProperty<T>(depth, config) {
     private val lambdaTests = arrayListOf<LambdaTest<E>>()
 
+    /**
+     * If the predicate returns `true` for a given validatable element, the element
+     * will be accept, or it will be reject by throwing a [ray.eldath.sirius.util.InvalidValueException]
+     *
+     * @param purpose (optional) the purpose of this lambda test, will be contained
+     *                  in the exception if the predicate returns `false`.
+     * @param lambda the predicate.
+     */
     fun acceptIf(purpose: String = "", lambda: (E) -> Boolean) {
         lambdaTests += LambdaTest(lambda, purpose)
     }
@@ -252,10 +283,23 @@ sealed class ValidationScopeWithLengthProperty<T : AnyValidationPredicate>(
     var minLength = 0
     var maxLength = max
 
+    /**
+     * Derive a range from [lengthExact], [lengthRange], [minLength] and [maxLength] with
+     * the following priority:
+     *
+     *   1. If [lengthExact] is set, the target length is [lengthExact].
+     *   2. If [lengthRange] is set, the target length range is [lengthRange].
+     *   3. Otherwise, the target length range is from [minLength] to [maxLength].
+     *      Note that there are default values for both two.
+     *
+     * @sample buildRange
+     */
     fun buildRange(): IntRange =
         when {
             lengthExact != 0 -> lengthExact..lengthExact
             lengthRange != maxRange -> lengthRange
             else -> minLength..maxLength
         }
+
+    fun isRangeValid() = lengthExact in maxRange && minLength..maxLength in maxRange && lengthRange in maxRange
 }

@@ -62,7 +62,7 @@ class JsonObjectValidationPredicate(
 
     override fun final(value: JSONObject): Boolean {
         val wrapper = this.test(value)
-        testTests(wrapper.tests, this, "[jsonObject]", value)
+        testLambdaTests(wrapper.tests, this, "[jsonObject]", value)
         return testAsserts(wrapper.asserts, "[jsonObject]", this)
     }
 
@@ -71,16 +71,11 @@ class JsonObjectValidationPredicate(
         if (any != null)
             testAnyBlock(value, any.build())
         children.forEach { (key, predicate) -> testChildrenPredicate(value, key, predicate) }
-        testRegexChildren(value)
-        return assertsOf(tests, rangeIn("length", lengthRange, value.length()))
-    }
-
-    private fun testRegexChildren(value: JSONObject) {
-        val keys = value.keySet().toList() // to be immutable
-
         regexChildren.forEach { (regex, predicate) ->
-            keys.filter { regex.matches(it) }.forEach { testChildrenPredicate(value, it, predicate) }
+            value.keySet().filter { regex.matches(it) }.forEach { testChildrenPredicate(value, it, predicate) }
         }
+
+        return assertsOf(tests, rangeIn("length", lengthRange, value.length()))
     }
 
     private fun testAnyBlock(obj: JSONObject, anyBlock: JsonObjectValidationPredicate) {
@@ -127,11 +122,11 @@ class JsonObjectValidationPredicate(
 
     private fun <T> testChildrenAsserts(key: String, element: T, predicate: ValidationPredicate<T>): Unit =
         predicate.test(element).run {
-            testTests(tests, predicate, key, element)
+            testLambdaTests(tests, predicate, key, element)
             testAsserts(asserts, key, predicate)
         }
 
-    private fun <T> testTests(
+    private fun <T> testLambdaTests(
         tests: List<LambdaTest<T>>,
         predicate: ValidationPredicate<T>,
         key: String,

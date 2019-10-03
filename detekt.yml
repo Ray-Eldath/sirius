@@ -1,8 +1,12 @@
 build:
     maxIssues: 5
     weights:
-        complexity: 2
         comments: 0
+
+complexity:
+    TooManyFunctions:
+        active: true
+        excludes: "**/Scope.*"
 
 exceptions:
     InstanceOfCheckForException:

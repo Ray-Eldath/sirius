@@ -16,16 +16,18 @@
    - [ ] Number
    - [X] Boolean
    - [ ] String
-   - [ ] JSON Object
+   - [X] JSON Object
    - [ ] JSON Array
    - [X] `null`
- - [ ] Documentation for API with [Dokka](https://github.com/Kotlin/dokka)
+ - [X] Documentation for API with [Dokka](https://github.com/Kotlin/dokka)
  - [X] Validation configuration
  - [ ] JUnit test
  - [X] Continuous Integration (CI)
  - [ ] (?) SemVer & SemRelease
 
 ## Performance
+
+**This section is outdated, will be updated soon...**
 
 The two graphs posted below is tested on CircleCI, with 2 CPU cores and 4 GB memory. Each test is warmed-up 8 seconds, repeated twice, and then formally tested 10 seconds, repeated 4 times. The whole procedure will be repeated twice as well. 
 

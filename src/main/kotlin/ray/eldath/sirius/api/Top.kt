@@ -8,8 +8,10 @@ import ray.eldath.sirius.core.JsonObjectValidationScope
 fun rootJsonObject(
     requiredByDefault: Boolean = false,
     nullableByDefault: Boolean = false,
+    stringNonEmptyByDefault: Boolean = false,
+    stringNonBlankByDefault: Boolean = false,
     block: JsonObjectValidationScope.() -> Unit
 ): JsonObjectValidationPredicate =
-    SiriusValidationConfig(requiredByDefault, nullableByDefault).let {
+    SiriusValidationConfig(requiredByDefault, nullableByDefault, stringNonEmptyByDefault, stringNonBlankByDefault).let {
         JsonObjectValidationScope(0, it).apply { required }.apply(block).build()
     }
