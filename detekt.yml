@@ -3,7 +3,6 @@ build:
     weights:
         complexity: 2
         comments: 0
-        ForbiddenComment: 5
 
 exceptions:
     InstanceOfCheckForException:
@@ -43,7 +42,7 @@ style:
         active: false
     MagicNumber:
         active: true
-        excludes: "**/Util.*"
+        excludes: "**/Util.*,**/Exception.kt"
     MayBeConst:
         active: true
     SpacingBetweenPackageAndImports:

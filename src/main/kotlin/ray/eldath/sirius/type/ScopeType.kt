@@ -10,7 +10,10 @@ abstract class BasicOption(require: Boolean, nullable: Boolean) {
         get() = run { isRequired = true }
 
     val optional: Unit
-        get() = run { isRequired = false }
+        get() {
+            isRequired = false
+            nullable
+        }
 
     //
     var isNullable = nullable

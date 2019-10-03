@@ -79,10 +79,14 @@ class StringValidationScope(override val depth: Int, config: SiriusValidationCon
     private var isAllBlankAccepted = true
 
     val nonEmpty: Unit
-        get() = run { isEmptyAccepted = false }
+        get() {
+            builtInAcceptIf("the string must contain content") { it.isNotEmpty() }
+        }
 
     val nonBlank: Unit
-        get() = run { isAllBlankAccepted = false }
+        get() {
+            builtInAcceptIf("the string must consist of characters except for whitespace") { it.isNotBlank() }
+        }
 
     private val expectedList = mutableListOf<String>()
     private var expectedIgnoreCase = false
@@ -158,23 +162,18 @@ class StringValidationScope(override val depth: Int, config: SiriusValidationCon
     }
 
     private fun integrateTests() {
-        if (!isEmptyAccepted)
-            builtInAcceptIf("the string must contain content") { it.isNotEmpty() }
-        if (!isAllBlankAccepted)
-            builtInAcceptIf("the string must consist of characters except for whitespace") { it.isNotBlank() }
-
         if (expectedList.isNotEmpty())
-            builtInAcceptIf("the string must literally equal to one of the given string: ${expectedList.joinToString()}") {
+            builtInAcceptIf("the string must literally equal to one of the given string: $expectedList") {
                 expectedList.any { expected -> it == expected }
             }
 
         if (allPrefixes.isNotEmpty())
-            builtInAcceptIf("the string must starts with one of the given prefixes: ${allPrefixes.joinToString()}") {
+            builtInAcceptIf("the string must starts with one of the given prefixes: $allPrefixes") {
                 allPrefixes.any { prefix -> it.startsWith(prefix, prefixIgnoreCase) }
             }
 
         if (allSuffixes.isNotEmpty())
-            builtInAcceptIf("the string must ends with one of the given suffixes: ${allSuffixes.joinToString()}") {
+            builtInAcceptIf("the string must ends with one of the given suffixes: $allSuffixes") {
                 allSuffixes.any { suffix -> it.endsWith(suffix, suffixIgnoreCase) }
             }
     }

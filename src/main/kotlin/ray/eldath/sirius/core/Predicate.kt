@@ -97,18 +97,21 @@ class JsonObjectValidationPredicate(
         throwIf(!obj.has(key) && predicate.required) { jsonObjectMissingRequiredElement(predicate, key, depth) }
         // check nullability
         throwIf(isNull && !predicate.nullable) { jsonObjectNPE(predicate, key, depth) }
-        // check type
-        obj.get(key).let {
-            throwIf(it.javaClass.name != Validatable.fromPredicate(predicate).actualTypeName) {
-                jsonObjectTypeMismatch(predicate, key, depth, it)
+
+        if (!isNull) {
+            // check type
+            obj.get(key).let {
+                throwIf(it.javaClass.name != Validatable.fromPredicate(predicate).actualTypeName) {
+                    jsonObjectTypeMismatch(predicate, key, depth, it)
+                }
             }
-        }
-        if (!isNull)
+
             when (predicate) {
                 is StringValidationPredicate -> testChildrenAsserts(key, obj.getString(key), predicate)
                 is JsonObjectValidationPredicate -> testChildrenAsserts(key, obj.getJSONObject(key), predicate)
                 is BooleanValidationPredicate -> testChildrenAsserts(key, obj.getBoolean(key), predicate)
             }
+        }
     }
 
     private inline fun throwIf(condition: Boolean, throws: () -> ValidationException) =

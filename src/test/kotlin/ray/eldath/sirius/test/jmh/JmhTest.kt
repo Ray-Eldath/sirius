@@ -9,6 +9,7 @@ import org.openjdk.jmh.runner.Runner
 import org.openjdk.jmh.runner.options.OptionsBuilder
 import ray.eldath.sirius.api.rootJsonObject
 import ray.eldath.sirius.core.JsonObjectValidationPredicate
+import ray.eldath.sirius.util.StringCase
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.util.concurrent.TimeUnit
@@ -24,6 +25,10 @@ open class JmhTest {
     private val json: String = """
             {
                 "abc": "1234567890",
+                "abd": { 
+                    "123": "RayEldath",
+                    "456": "pre_  \t_END"
+                },
                 "cde": {
                     "456": true,
                     "202": "pr_1234_ends",
@@ -53,17 +58,27 @@ open class JmhTest {
                 acceptIf { it.length in 1..12 }
             }
 
+            "abd" jsonObject {
+                "101" boolean { optional }
+                "123" string { requireCase(StringCase.PASCAL_CASE) }
+                "456" string {
+                    nonBlank
+                    startsWithAny("Pre", "pre_")
+                    endsWithAny("end", ignoreCase = true)
+                }
+            }
+
             "cde" jsonObject {
+                any {
+                    "123" string {}
+                    "456" boolean { expected = true }
+                }
+
                 "202" string {
                     acceptIf { it.startsWith("pre_") || it.endsWith("_ends") }
                 }
 
                 "303" boolean { nullable }
-
-                any {
-                    "123" string {}
-                    "456" boolean { expected = true }
-                }
 
                 "789" jsonObject {
                     any {
@@ -73,7 +88,6 @@ open class JmhTest {
                 }
 
                 "101" jsonObject {
-                    "something" string { lengthRange = 2..4 }
                     "anything" jsonObject {
                         "anything" jsonObject {
                             "anything" jsonObject {
