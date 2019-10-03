@@ -18,7 +18,7 @@ import java.util.concurrent.TimeUnit
 @Fork(2)
 @Threads(1)
 @Warmup(iterations = 2, time = 4)
-@Measurement(iterations = 4, time = 5)
+@Measurement(iterations = 2, time = 8)
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
 @State(Scope.Benchmark)
 open class JmhTest {
@@ -114,14 +114,12 @@ open class JmhTest {
 
     companion object {
         private const val dir = "build/reports/jmh"
-        private const val debug = false
 
         private val gcFileRegex = Regex("gc(\\.(\\d{4})-(\\d{2})-(\\d{2})_(\\d{2})-(\\d{2})-(\\d{2}))*\\.log")
 
-        @Suppress("ConstantConditionIf")
         @JvmStatic
         fun main(vararg args: String) {
-            if (debug) {
+            if (args.size == 1 && args[0].toLowerCase() == "debug") {
                 val instance = JmhTest()
                 instance.build()
                 instance.test().also {
