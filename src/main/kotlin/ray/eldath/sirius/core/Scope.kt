@@ -1,6 +1,7 @@
 package ray.eldath.sirius.core
 
 import org.apache.commons.lang3.StringUtils
+import org.intellij.lang.annotations.Language
 import org.json.JSONObject
 import ray.eldath.sirius.config.SiriusValidationConfig
 import ray.eldath.sirius.core.PredicateBuildInterceptor.jsonObjectIntercept
@@ -19,6 +20,7 @@ class JsonObjectValidationScope(override val depth: Int, private val config: Sir
     ValidationScopeWithLengthAndTestsProperty<JSONObject, JsonObjectValidationPredicate>(depth, config) {
 
     private val children = hashMapOf<String, AnyValidationPredicate>()
+    private val regexChildren = hashMapOf<Regex, AnyValidationPredicate>()
     private var _any: JsonObjectValidationScope? = null
 
     infix fun String.string(block: StringValidationScope.() -> Unit) {
@@ -33,6 +35,22 @@ class JsonObjectValidationScope(override val depth: Int, private val config: Sir
         children += this to jsonObjectIntercept(block, key = this, depth = depth, config = config)
     }
 
+    //
+
+    infix fun Regex.string(block: StringValidationScope.() -> Unit) {
+        regexChildren += this to jsonObjectIntercept(block, key = this.toString(), depth = depth, config = config)
+    }
+
+    infix fun Regex.jsonObject(block: JsonObjectValidationScope.() -> Unit) {
+        regexChildren += this to jsonObjectIntercept(block, key = this.toString(), depth = depth, config = config)
+    }
+
+    infix fun Regex.boolean(block: BooleanValidationScope.() -> Unit) {
+        regexChildren += this to jsonObjectIntercept(block, key = this.toString(), depth = depth, config = config)
+    }
+
+    operator fun @receiver: Language("RegExp") String.unaryPlus() = Regex(this)
+
     fun any(block: JsonObjectValidationScope.() -> Unit) {
         if (_any != null)
             throw ExceptionAssembler.multipleAnyBlock(this, depth)
@@ -46,6 +64,7 @@ class JsonObjectValidationScope(override val depth: Int, private val config: Sir
         JsonObjectValidationPredicate(
             tests = this.buildLambdaTests(),
             children = children,
+            regexChildren = regexChildren,
             lengthRange = this.buildRange(), // inherit
             required = isRequired,
             nullable = isNullable,

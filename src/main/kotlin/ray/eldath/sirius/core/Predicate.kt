@@ -52,6 +52,7 @@ class JsonObjectValidationPredicate(
     override val depth: Int,
     val lengthRange: IntRange = 0..Int.MAX_VALUE,
     val children: Map<String, AnyValidationPredicate> = emptyMap(),
+    val regexChildren: Map<Regex, AnyValidationPredicate> = emptyMap(),
     val any: JsonObjectValidationScope? = null
 ) : ValidationPredicate<JSONObject>(required, nullable, tests, depth), TopPredicate<JSONObject> {
 
@@ -69,16 +70,25 @@ class JsonObjectValidationPredicate(
     override fun test(value: JSONObject): AssertWrapper<JSONObject> {
         if (any != null)
             testAnyBlock(value, any.build())
-        children.entries.forEach { testChildrenPredicate(value, it) }
+        children.forEach { (key, predicate) -> testChildrenPredicate(value, key, predicate) }
+        testRegexChildren(value)
         return assertsOf(tests, rangeIn("length", lengthRange, value.length()))
+    }
+
+    private fun testRegexChildren(value: JSONObject) {
+        val keys = value.keySet().toList() // to be immutable
+
+        regexChildren.forEach { (regex, predicate) ->
+            keys.filter { regex.matches(it) }.forEach { testChildrenPredicate(value, it, predicate) }
+        }
     }
 
     private fun testAnyBlock(obj: JSONObject, anyBlock: JsonObjectValidationPredicate) {
         val entries = anyBlock.children.entries
         var counter = 0
-        entries.forEach {
+        entries.forEach { (key, predicate) ->
             try {
-                testChildrenPredicate(obj, it)
+                testChildrenPredicate(obj, key, predicate)
             } catch (e: SiriusException) {
                 counter += 1
             }
@@ -88,9 +98,7 @@ class JsonObjectValidationPredicate(
             throw IVEAssembler.anyBlock(depth)
     }
 
-    private fun testChildrenPredicate(obj: JSONObject, entry: Map.Entry<String, AnyValidationPredicate>) {
-        val key = entry.key
-        val predicate = entry.value
+    private fun testChildrenPredicate(obj: JSONObject, key: String, predicate: AnyValidationPredicate) {
         val isNull = obj.isNull(key)
 
         // check existence

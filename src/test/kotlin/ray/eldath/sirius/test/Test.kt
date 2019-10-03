@@ -26,6 +26,7 @@ object Test {
                 "123" string { startsWithAny("pre", "cre") }
                 "234" string { endsWithAny("4") }
                 "456" string { nonBlank }
+                +"45\\d" string { nonBlank }
             }
         }
 
@@ -39,7 +40,8 @@ object Test {
                 "fgh": {
                     "123": "cre_123",
                     "234": "pre_220.34",
-                    "456": "\t   "
+                    "456": "\t   123", 
+                    "457": "\t   123"
                 }
             }
         """.trimIndent()
