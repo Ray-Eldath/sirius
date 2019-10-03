@@ -4,12 +4,13 @@ import org.apache.commons.lang3.StringUtils
 import org.json.JSONObject
 import ray.eldath.sirius.config.SiriusValidationConfig
 import ray.eldath.sirius.core.PredicateBuildInterceptor.jsonObjectIntercept
-import ray.eldath.sirius.core.StringValidationScope.StringCase.*
 import ray.eldath.sirius.type.AnyValidationPredicate
 import ray.eldath.sirius.type.BasicOption
 import ray.eldath.sirius.type.LambdaTest
 import ray.eldath.sirius.type.TopClassValidationScopeMarker
 import ray.eldath.sirius.util.ExceptionAssembler
+import ray.eldath.sirius.util.StringCase
+import ray.eldath.sirius.util.StringCase.*
 
 private const val max = Int.MAX_VALUE
 private val maxRange = 0..max
@@ -74,6 +75,15 @@ class BooleanValidationScope(override val depth: Int, config: SiriusValidationCo
 class StringValidationScope(override val depth: Int, config: SiriusValidationConfig) :
     ValidationScopeWithLengthAndTestsProperty<String, StringValidationPredicate>(depth, config) {
 
+    private var isEmptyAccepted = true
+    private var isAllBlankAccepted = true
+
+    val nonEmpty: Unit
+        get() = run { isEmptyAccepted = false }
+
+    val nonBlank: Unit
+        get() = run { isAllBlankAccepted = false }
+
     private val expectedList = mutableListOf<String>()
     private var expectedIgnoreCase = false
 
@@ -90,7 +100,7 @@ class StringValidationScope(override val depth: Int, config: SiriusValidationCon
      * // but if you continue...
      * expected("f", "g")
      * expected("h")
-     * // here only "h" is expected because in the last invocation, only one string is given.
+     * // here only "h" is expected because in the last invocation, only one string is provided.
      * ```
      *
      * @param expected list of expected strings.
@@ -104,24 +114,7 @@ class StringValidationScope(override val depth: Int, config: SiriusValidationCon
     }
 
     fun regex(regex: Regex) {
-        builtInTest("the string must matches the given regex $regex") { it.matches(regex) }
-    }
-
-    /**
-     * If the string contains one non-ASCII char, the test about the case will fail directly.
-     *
-     * @property PASCAL_CASE all chars are letters, and are pascal case, like "PascalCase", "PAscalCase".
-     *                        *Note that "TeX" or "ABC" isn't pascal case while "TEx" is*.
-     * @property CAMEL_CASE all chars are letters, and are camel case, like "camelCase", "camelCAse".
-     *                       *Note that "testE" isn't camel case while "testEx" is*.
-     */
-    enum class StringCase {
-        LOWER_CASE, UPPER_CASE, PASCAL_CASE, CAMEL_CASE;
-
-        companion object {
-            val pascalCaseRegex = Regex("^[A-Z][a-z]+(?:[A-Z][a-z]+)*\$")
-            val camelCaseRegex = Regex("^[a-z]+(?:[A-Z][a-z]+)+\$")
-        }
+        builtInAcceptIf("the string must matches the given regex $regex") { it.matches(regex) }
     }
 
     fun requireCase(case: StringCase) {
@@ -132,10 +125,10 @@ class StringValidationScope(override val depth: Int, config: SiriusValidationCon
                 PASCAL_CASE -> { str -> str.matches(StringCase.pascalCaseRegex) }
                 CAMEL_CASE -> { str -> str.matches(StringCase.camelCaseRegex) }
             }
-        builtInTest("the string must is $case") { StringUtils.isAsciiPrintable(it) && predicate(it) }
+        builtInAcceptIf("the string must is $case") { StringUtils.isAsciiPrintable(it) && predicate(it) }
     }
 
-    // empty, black, 首尾有空格
+    // TODO: 首尾有空格
 
     private val allPrefixes = mutableListOf<String>()
     private var prefixIgnoreCase = false
@@ -164,21 +157,30 @@ class StringValidationScope(override val depth: Int, config: SiriusValidationCon
         suffixIgnoreCase = ignoreCase
     }
 
-    override fun build(): StringValidationPredicate {
+    private fun integrateTests() {
+        if (!isEmptyAccepted)
+            builtInAcceptIf("the string must contain content") { it.isNotEmpty() }
+        if (!isAllBlankAccepted)
+            builtInAcceptIf("the string must consist of characters except for whitespace") { it.isNotBlank() }
+
         if (expectedList.isNotEmpty())
-            builtInTest("the string must literally equal to one of the given string: ${expectedList.joinToString()}") {
+            builtInAcceptIf("the string must literally equal to one of the given string: ${expectedList.joinToString()}") {
                 expectedList.any { expected -> it == expected }
             }
 
         if (allPrefixes.isNotEmpty())
-            builtInTest("the string must starts with one of the given prefixes: ${allPrefixes.joinToString()}") {
+            builtInAcceptIf("the string must starts with one of the given prefixes: ${allPrefixes.joinToString()}") {
                 allPrefixes.any { prefix -> it.startsWith(prefix, prefixIgnoreCase) }
             }
 
         if (allSuffixes.isNotEmpty())
-            builtInTest("the string must ends with one of the given suffixes: ${allSuffixes.joinToString()}") {
+            builtInAcceptIf("the string must ends with one of the given suffixes: ${allSuffixes.joinToString()}") {
                 allSuffixes.any { suffix -> it.endsWith(suffix, suffixIgnoreCase) }
             }
+    }
+
+    override fun build(): StringValidationPredicate {
+        integrateTests()
 
         return StringValidationPredicate(
             lengthRange = this.buildRange(),
@@ -211,11 +213,11 @@ sealed class ValidationScopeWithLengthAndTestsProperty<E, T : ValidationPredicat
 ) : ValidationScopeWithLengthProperty<T>(depth, config) {
     private val lambdaTests = arrayListOf<LambdaTest<E>>()
 
-    fun test(purpose: String = "", lambda: (E) -> Boolean) {
+    fun acceptIf(purpose: String = "", lambda: (E) -> Boolean) {
         lambdaTests += LambdaTest(lambda, purpose)
     }
 
-    protected fun builtInTest(purpose: String, lambda: (E) -> Boolean) {
+    protected fun builtInAcceptIf(purpose: String, lambda: (E) -> Boolean) {
         lambdaTests += LambdaTest(lambda, purpose, true)
     }
 

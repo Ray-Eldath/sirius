@@ -60,7 +60,8 @@ internal object ExceptionAssembler {
         }
 
         /*
-         * args: [key: String, purpose: String, isBuiltIn: Boolean]
+        * args:
+        * [..., purpose: String, isBuiltIn: Boolean]
          */
         fun lambda(index: Int, element: AnyValidationPredicate, depth: Int, vararg args: Any, label: Validatable = JSON_OBJECT): IVE {
             require(args.size in 1..3)
