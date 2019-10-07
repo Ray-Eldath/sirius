@@ -45,14 +45,14 @@ sealed class InvalidSchemaException(override val message: String) : SiriusExcept
  */
 sealed class ValidationException(override val message: String) : SiriusException(message) {
     /**
-     * If a element is required by set [ray.eldath.sirius.core.ValidationScope.required]
-     * or inherit from configuration ([ray.eldath.sirius.config.SiriusValidationConfig])
+     * If an element is required by set [ray.eldath.sirius.core.ValidationScope.required]
+     * or inherit from configuration ([ray.eldath.sirius.config.SiriusValidationConfig.requiredByDefault])
      * but can not found in the incoming JSON, [MissingRequiredElementException] will be thrown.
      */
     class MissingRequiredElementException(override val message: String) : ValidationException(message)
 
     /**
-     * If a element matches the index of an element (like they have the same key
+     * If an element matches the index of an element (like they have the same key
      * in `JsonObject`) but their type is different, [TypeMismatchException] will be thrown.
      */
     class TypeMismatchException(override val message: String) : ValidationException(message)

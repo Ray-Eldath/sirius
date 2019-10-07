@@ -34,6 +34,7 @@ dependencies {
 }
 
 dokka {
+    moduleName = 'data'
     outputFormat = 'html'
     outputDirectory = "$buildDir/dokka"
 
@@ -47,7 +48,8 @@ dokka {
         dir = "src/main/kotlin" // or simply "./"
 
         // URL showing where the source code can be accessed through the web browser
-        url = "https://github.com/Ray-Eldath/sirius/blob/master/src/main/kotlin" // remove src/main/kotlin if you use "./" above
+        url = "https://github.com/Ray-Eldath/sirius/blob/master/src/main/kotlin"
+        // remove src/main/kotlin if you use "./" above
 
         // Suffix which is used to append the line number to the URL. Use #L for GitHub
         suffix = "#L"

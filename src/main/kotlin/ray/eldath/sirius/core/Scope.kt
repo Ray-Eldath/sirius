@@ -1,5 +1,6 @@
 package ray.eldath.sirius.core
 
+import org.apache.commons.lang3.CharUtils
 import org.apache.commons.lang3.StringUtils
 import org.intellij.lang.annotations.Language
 import org.json.JSONObject
@@ -12,6 +13,8 @@ import ray.eldath.sirius.type.TopClassValidationScopeMarker
 import ray.eldath.sirius.util.ExceptionAssembler
 import ray.eldath.sirius.util.StringCase
 import ray.eldath.sirius.util.StringCase.*
+import ray.eldath.sirius.util.StringContentPattern
+import ray.eldath.sirius.util.StringContentPattern.*
 
 private const val max = Int.MAX_VALUE
 private val maxRange = 0..max
@@ -99,7 +102,7 @@ class BooleanValidationScope(override val depth: Int, config: SiriusValidationCo
 
     override fun build() = BooleanValidationPredicate(isRequired, isNullable, depth, expected)
 
-    override fun isAssertsValid(): Boolean = !expectedInitialized
+    override fun isAssertsValid(): Boolean = expectedInitialized
 }
 
 class StringValidationScope(override val depth: Int, private val config: SiriusValidationConfig) :
@@ -154,12 +157,42 @@ class StringValidationScope(override val depth: Int, private val config: SiriusV
         builtInAcceptIf("the string must matches the given regex $regex") { it.matches(regex) }
     }
 
-    // TODO: requireContent
+    private val contentRequirements = hashSetOf<StringContentPattern>()
+
+    /**
+     * Require the string consists of the given types of chars.
+     *
+     * @param contentPattern the types of chars. See [StringContentPattern]
+     * @see [StringContentPattern]
+     */
+    fun requireContent(vararg contentPattern: StringContentPattern) {
+        contentRequirements.addAll(contentPattern)
+    }
+
+    private fun integrateContentRequirements() {
+        val handlers = contentRequirements.map<StringContentPattern, (Char) -> Boolean> {
+            // KotlinFrontEndException thrown if use unbound MH here: KT-25585
+            when (it) {
+                ALPHA -> { char -> CharUtils.isAsciiAlpha(char) }
+                SPACE -> { char -> char == ' ' }
+                NUMBER -> { char -> CharUtils.isAsciiNumeric(char) }
+                ASCII -> { char -> CharUtils.isAscii(char) }
+                NON_ASCII -> { char -> !CharUtils.isAscii(char) }
+            }
+        }
+
+        builtInAcceptIf("all chars of the string must is one of the following type: $contentRequirements") { str ->
+            str.all { char ->
+                handlers.any { handler -> handler(char) }
+            }
+        }
+    }
 
     /**
      * Require the string is the given case pattern.
      *
-     * @param case the target case pattern. See: [StringCase]
+     * @param case the target case pattern. See [StringCase]
+     * @see [StringCase]
      */
     fun requireCase(case: StringCase) {
         val predicate: (String) -> Boolean =
@@ -168,7 +201,10 @@ class StringValidationScope(override val depth: Int, private val config: SiriusV
                 UPPER_CASE -> { str -> StringUtils.isAllUpperCase(str) }
                 PASCAL_CASE -> { str -> str.matches(StringCase.pascalCaseRegex) }
                 CAMEL_CASE -> { str -> str.matches(StringCase.camelCaseRegex) }
-                // TODO: UNDERSCORE_CASE
+                SNAKE_CASE ->
+                    { str -> StringUtils.isMixedCase(str) && str.matches(StringCase.snakeCaseRegex) }
+                SCREAMING_SNAKE_CASE ->
+                    { str -> StringUtils.isMixedCase(str) && str.matches(StringCase.screamingSnakeCaseRegex) }
             }
         builtInAcceptIf("the string must is $case") { StringUtils.isAsciiPrintable(it) && predicate(it) }
     }
@@ -204,6 +240,8 @@ class StringValidationScope(override val depth: Int, private val config: SiriusV
         if (config.stringNonBlankByDefault) nonBlank
         if (config.stringNonEmptyByDefault) nonEmpty
 
+        if (contentRequirements.isNotEmpty()) integrateContentRequirements()
+
         if (expectedList.isNotEmpty())
             builtInAcceptIf("the string must literally equal to one of the given string: $expectedList") {
                 expectedList.any { expected -> it == expected }
@@ -232,7 +270,12 @@ class StringValidationScope(override val depth: Int, private val config: SiriusV
         )
     }
 
-    override fun isAssertsValid(): Boolean = isRangeValid()
+    /**
+     * It is unreasonable to require a string that only consists of ASCII chars
+     * while requiring it only consists of non-ASCII chars.
+     */
+    override fun isAssertsValid(): Boolean =
+        isRangeValid() && !(contentRequirements.containsAll(listOf(ASCII, NON_ASCII)))
 }
 
 private operator fun <E : Comparable<E>, T : ClosedRange<E>> T.contains(larger: T): Boolean =

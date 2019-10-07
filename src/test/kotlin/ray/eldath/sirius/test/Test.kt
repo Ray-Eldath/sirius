@@ -2,6 +2,7 @@ package ray.eldath.sirius.test
 
 import ray.eldath.sirius.api.rootJsonObject
 import ray.eldath.sirius.util.StringCase
+import ray.eldath.sirius.util.StringContentPattern.*
 
 object Test {
     @JvmStatic
@@ -14,7 +15,7 @@ object Test {
             }
 
             "cde" jsonObject {
-                "123" string { expected("123", "456") }
+                "123" string { requireContent(NUMBER, ALPHA, NON_ASCII) }
                 "456" boolean {
                     nonnull
                     optional
@@ -34,7 +35,7 @@ object Test {
             {
                 "abc": "RayEldath",
                 "cde": {
-                    "123": "123",
+                    "123": "Phosphorous你好",
                     "456": false
                 },
                 "fgh": {

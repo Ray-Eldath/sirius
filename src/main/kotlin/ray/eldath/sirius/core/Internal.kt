@@ -16,9 +16,10 @@ object PredicateBuildInterceptor {
             .getDeclaredConstructor(Int::class.java, SiriusValidationConfig::class.java)
             .newInstance(d, config)
 
+        val applied = inst.apply(initializer)
         if (!inst.isAssertsValid())
             throw ExceptionAssembler.jsonObjectInvalidAssert(scope = inst, key = key, depth = d)
-        return inst.apply(initializer).build()
+        return applied.build()
     }
 }
 
