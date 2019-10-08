@@ -102,7 +102,7 @@ class BooleanValidationScope(override val depth: Int, config: SiriusValidationCo
 
     override fun build() = BooleanValidationPredicate(isRequired, isNullable, depth, expected)
 
-    override fun isAssertsValid(): Boolean = expectedInitialized
+    override fun isAssertsValid(): Boolean = expectedInitialized || !isRequired || isNullable
 }
 
 class StringValidationScope(override val depth: Int, private val config: SiriusValidationConfig) :
@@ -278,8 +278,8 @@ class StringValidationScope(override val depth: Int, private val config: SiriusV
         isRangeValid() && !(contentRequirements.containsAll(listOf(ASCII, NON_ASCII)))
 }
 
-private operator fun <E : Comparable<E>, T : ClosedRange<E>> T.contains(larger: T): Boolean =
-    this.start >= larger.start && this.endInclusive <= larger.endInclusive
+private operator fun <E : Comparable<E>, T : ClosedRange<E>> T.contains(smaller: T): Boolean =
+    start <= smaller.start && endInclusive >= smaller.endInclusive
 
 
 // left due to sealed class's constraint
@@ -337,12 +337,13 @@ sealed class ValidationScopeWithLengthProperty<T : AnyValidationPredicate>(
      *
      * @sample buildRange
      */
-    fun buildRange(): IntRange =
+    protected fun buildRange(): IntRange =
         when {
             lengthExact != 0 -> lengthExact..lengthExact
             lengthRange != maxRange -> lengthRange
             else -> minLength..maxLength
         }
 
-    fun isRangeValid() = lengthExact in maxRange && minLength..maxLength in maxRange && lengthRange in maxRange
+    protected fun isRangeValid() =
+        lengthExact in maxRange && minLength..maxLength in maxRange && lengthRange in maxRange
 }
