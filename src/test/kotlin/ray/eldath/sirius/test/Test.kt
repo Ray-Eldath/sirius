@@ -17,7 +17,6 @@ object Test {
             "cde" jsonObject {
                 "123" string { requireContent(NUMBER, ALPHA, NON_ASCII) }
                 "456" boolean {
-                    nonnull
                     optional
                     expected = false
                 }

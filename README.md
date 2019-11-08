@@ -1,6 +1,6 @@
 # sirius [![phosphorus](https://forthebadge.com/images/badges/built-with-love.svg)](https://forthebadge.com)  [![forthebadge](https://forthebadge.com/images/badges/powered-by-electricity.svg)](https://forthebadge.com)
 
-[![CodeFactor Grade](https://img.shields.io/codefactor/grade/github/Ray-Eldath/sirius/master?style=flat-square)](https://www.codefactor.io/repository/github/ray-eldath/sirius) [![GitHub](https://img.shields.io/github/license/Ray-Eldath/sirius?style=flat-square)](https://github.com/Ray-Eldath/sirius/blob/master/LICENSE) [![CircleCI](https://img.shields.io/circleci/build/github/Ray-Eldath/sirius?logo=circleci&style=flat-square)](https://circleci.com/gh/Ray-Eldath/workflows/sirius/tree/master) 
+[![license](https://img.shields.io/github/license/Ray-Eldath/sirius?style=flat-square)](https://github.com/Ray-Eldath/sirius/blob/master/LICENSE) [![CodeFactor Grade](https://img.shields.io/codefactor/grade/github/Ray-Eldath/sirius/master?style=flat-square)](https://www.codefactor.io/repository/github/ray-eldath/sirius) [![DependaBot](https://flat.badgen.net/dependabot/Ray-Eldath/sirius/?icon=dependabot)](https://app.dependabot.com/accounts/Ray-Eldath/repos/203621031) [![CircleCI](https://img.shields.io/circleci/build/github/Ray-Eldath/sirius?logo=circleci&style=flat-square)](https://circleci.com/gh/Ray-Eldath/sirius)
 
 :construction: (WIP) Type-safe, lightweight JSON validator with Kotlin DSL.
 
@@ -43,6 +43,10 @@ The first graph is about throughput, which shows the number of times that the op
 Related code are in `/src/test/kotlin/.../jmh` folder.
 
 ## Acknowledgement
+
+> *Buy me a coffee...?*
+> 
+> <a href="https://www.buymeacoffee.com/RayEldath" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/default-blue.png" alt="Buy Me A Coffee" style="height: 51px !important;width: 217px !important;" ></a>
 
 This project is developed with IntelliJ IDEA Ultimate and the subscription is obtained freely from [Jetbrains Open Source Support Program](https://www.jetbrains.com/community/opensource/). Thanks to Jetbrains!
 

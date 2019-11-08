@@ -40,6 +40,13 @@ class JsonObjectValidationScope(override val depth: Int, private val config: Sir
 
     //
 
+    /**
+     * Two ways to denote a regex key matching pattern:
+     *  - Any string prefixed with `+`.
+     *  - Construct `Regex` explicitly. (exp. `Regex("...") string { ... }`)
+     */
+    operator fun @receiver: Language("RegExp") String.unaryPlus() = Regex(this)
+
     infix fun Regex.string(block: StringValidationScope.() -> Unit) {
         regexChildren += this to jsonObjectIntercept(block, key = this.toString(), depth = depth, config = config)
     }
@@ -51,8 +58,6 @@ class JsonObjectValidationScope(override val depth: Int, private val config: Sir
     infix fun Regex.boolean(block: BooleanValidationScope.() -> Unit) {
         regexChildren += this to jsonObjectIntercept(block, key = this.toString(), depth = depth, config = config)
     }
-
-    operator fun @receiver: Language("RegExp") String.unaryPlus() = Regex(this)
 
     fun any(block: JsonObjectValidationScope.() -> Unit) {
         if (_any != null)
@@ -86,7 +91,7 @@ class JsonObjectValidationScope(override val depth: Int, private val config: Sir
             any = _any
         )
 
-    override fun isAssertsValid(): Boolean = isRangeValid()
+    override fun isAssertsValid(): Map<Boolean, String> = mapOf(isRangeValid())
 }
 
 class BooleanValidationScope(override val depth: Int, config: SiriusValidationConfig) :
@@ -100,9 +105,7 @@ class BooleanValidationScope(override val depth: Int, config: SiriusValidationCo
 
     private var expectedInitialized = false
 
-    override fun build() = BooleanValidationPredicate(isRequired, isNullable, depth, expected)
-
-    override fun isAssertsValid(): Boolean = expectedInitialized || !isRequired || isNullable
+    override fun build() = BooleanValidationPredicate(isRequired, isNullable, depth, expected, expectedInitialized)
 }
 
 class StringValidationScope(override val depth: Int, private val config: SiriusValidationConfig) :
@@ -274,8 +277,13 @@ class StringValidationScope(override val depth: Int, private val config: SiriusV
      * It is unreasonable to require a string that only consists of ASCII chars
      * while requiring it only consists of non-ASCII chars.
      */
-    override fun isAssertsValid(): Boolean =
-        isRangeValid() && !(contentRequirements.containsAll(listOf(ASCII, NON_ASCII)))
+    override fun isAssertsValid(): Map<Boolean, String> = mapOf(
+        isRangeValid(),
+        Pair(
+            !(contentRequirements.containsAll(listOf(ASCII, NON_ASCII))),
+            "requiring a string that only consists of ASCII chars while requiring it only consists of non-ASCII chars is unreasonable."
+        )
+    )
 }
 
 private operator fun <E : Comparable<E>, T : ClosedRange<E>> T.contains(smaller: T): Boolean =
@@ -288,7 +296,7 @@ sealed class ValidationScope<T : AnyValidationPredicate>(open val depth: Int, co
     BasicOption(config.requiredByDefault, config.nullableByDefault) {
 
     internal abstract fun build(): T
-    internal abstract fun isAssertsValid(): Boolean
+    internal open fun isAssertsValid(): Map<Boolean, String> = mapOf(true to "")
 }
 
 sealed class ValidationScopeWithLengthAndTestsProperty<E, T : ValidationPredicate<E>>(
@@ -344,6 +352,8 @@ sealed class ValidationScopeWithLengthProperty<T : AnyValidationPredicate>(
             else -> minLength..maxLength
         }
 
-    protected fun isRangeValid() =
-        lengthExact in maxRange && minLength..maxLength in maxRange && lengthRange in maxRange
+    protected fun isRangeValid(): Pair<Boolean, String> {
+        val r = (lengthExact in maxRange && minLength..maxLength in maxRange && lengthRange in maxRange)
+        return r to "length range must contained in $maxRange"
+    }
 }

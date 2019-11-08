@@ -157,8 +157,11 @@ internal object ExceptionAssembler {
             )
         }
 
-    internal fun jsonObjectInvalidAssert(scope: AnyValidationScope, key: String, depth: Int) =
-        InvalidAssertException("[JsonObject] assert validation failed at ${keyName(scope, key)} at ${depth(depth)}")
+    internal fun jsonObjectInvalidAssert(scope: AnyValidationScope, key: String, depth: Int, reason: String = "") =
+        InvalidAssertException(
+            "[JsonObject] assert validation failed at ${keyName(scope, key)} at ${depth(depth)}" +
+                    if (reason.isNotEmpty()) "\n trace: $reason" else ""
+        )
 
     internal fun jsonObjectMissingRequiredElement(element: AnyValidationPredicate, key: String, depth: Int) =
         MissingRequiredElementException("[JsonObject] missing required element ${keyName(element, key)} at ${depth(depth)}")

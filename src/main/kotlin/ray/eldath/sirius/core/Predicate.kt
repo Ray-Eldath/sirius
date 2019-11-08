@@ -38,11 +38,13 @@ class BooleanValidationPredicate(
     override val required: Boolean,
     override val nullable: Boolean,
     override val depth: Int,
-    val expected: Boolean
+    val expected: Boolean,
+    val expectedInitialized: Boolean // `expected` is set or not
 ) : ValidationPredicate<Boolean>(required = required, nullable = nullable, depth = depth) {
 
     override fun test(value: Boolean): AssertWrapper<Boolean> =
-        assertsOf(tests, equals("expected", expected = expected, actual = value))
+        if (!expectedInitialized) assertsOf(tests)
+        else assertsOf(tests, equals("expected", expected = expected, actual = value))
 }
 
 class JsonObjectValidationPredicate(

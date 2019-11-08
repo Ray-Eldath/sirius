@@ -59,7 +59,7 @@ open class JmhTest {
             }
 
             "abd" jsonObject {
-                "101" boolean { optional }
+                "101" boolean { }
                 "123" string { requireCase(StringCase.PASCAL_CASE) }
                 "456" string {
                     nonBlank
