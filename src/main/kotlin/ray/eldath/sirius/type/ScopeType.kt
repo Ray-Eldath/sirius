@@ -2,7 +2,7 @@ package ray.eldath.sirius.type
 
 import ray.eldath.sirius.core.ValidationScope
 
-abstract class BasicOption(require: Boolean, nullable: Boolean) {
+open class BasicOption(require: Boolean, nullable: Boolean) {
     var isRequired = require
         private set
 
@@ -19,7 +19,7 @@ abstract class BasicOption(require: Boolean, nullable: Boolean) {
     var isNullable = nullable
         private set
 
-    open val nullable: Unit
+    val nullable: Unit
         get() = run { isNullable = true }
 
     val nonnull: Unit

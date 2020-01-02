@@ -76,12 +76,12 @@ internal object ExceptionAssembler {
             IVE("[${label.displayName}] all validation failed in [any block] defined for ${label.displayName} at ${depth(depth)}")
 
         fun equal(assert: EqualAssert<*>, element: AnyValidationPredicate, depth: Int, vararg args: Any, label: Validatable = JSON_OBJECT) = IVE(
-            assembleK("equal", assert.propertyName, element, depth, label, args) +
+            header("equal", assert.propertyName, element, depth, label, args) +
                     "\n trace: ${assert.actual}(actual) should be ${assert.expected}(expected)"
         )
 
         fun contain(assert: ContainAssert<*>, element: AnyValidationPredicate, depth: Int, vararg args: Any, label: Validatable = JSON_OBJECT) = IVE(
-            assembleK("contain", assert.propertyName, element, depth, label, args) +
+            header("contain", assert.propertyName, element, depth, label, args) +
                     "\n trace: ${assert.element}(actual) should be contained in ${assert.container}(expected)"
         )
 
@@ -89,7 +89,7 @@ internal object ExceptionAssembler {
             val actual = assert.actual
             val header = if (actual.start == actual.endInclusive) actual.start.toString() else actual.toString()
             return IVE(
-                assembleK("range", assert.propertyName, element, depth, label, args) +
+                header("range", assert.propertyName, element, depth, label, args) +
                         "\n trace: $header(actual) should be contained in ${assert.bigger}(expected)"
             )
         }
@@ -114,10 +114,10 @@ internal object ExceptionAssembler {
                             args[1] as String
                         else "the ${index.toOrdinal()} lambda test defined in current scope is failed.") + purpose
 
-            return IVE(assembleK("lambda", propertyName, element, depth, label, args) + trace)
+            return IVE(header("lambda", propertyName, element, depth, label, args) + trace)
         }
 
-        private fun assembleK(
+        private fun header(
             type: String,
             propertyName: String,
             element: AnyValidationPredicate,

@@ -335,7 +335,7 @@ class StringValidationScope(override val depth: Int, private val config: SiriusV
         isRangeValid(),
         Pair(
             !(contentRequirements.containsAll(listOf(ASCII, NON_ASCII))),
-            "requiring a string that only consists of ASCII chars while requiring it only consists of non-ASCII chars is unreasonable."
+            "requiring a string that only consists of ASCII chars as well as non-ASCII chars is unreasonable."
         )
     )
 }
