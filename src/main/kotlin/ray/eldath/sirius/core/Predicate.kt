@@ -16,7 +16,6 @@ import ray.eldath.sirius.util.ExceptionAssembler.jsonObjectTypeMismatch
 import ray.eldath.sirius.util.SiriusException
 import ray.eldath.sirius.util.Util
 import ray.eldath.sirius.util.ValidationException
-import ray.eldath.sirius.util.getStillLong
 
 // overridden values should be prefixed for named argument
 class BooleanValidationPredicate(
@@ -47,6 +46,25 @@ class StringValidationPredicate(
         )
 
     override fun toString(): String = Util.reflectionToStringWithStyle(this)
+}
+
+class DecimalValidationPredicate(
+    override val required: Boolean,
+    override val nullable: Boolean,
+    override val tests: List<LambdaTest<Double>>,
+    override val depth: Int,
+    val valueRange: Range<Double> = 0.0..Double.MAX_VALUE,
+    val precisionRange: IntRange = 0..Int.MAX_VALUE,
+    val expected: List<Double> = emptyList()
+) : ValidationPredicate<Double>(required, nullable, tests, depth) {
+
+    override fun test(value: Double): AssertWrapper<Double> =
+        assertsOf(
+            tests,
+            contain("value", expected, value),
+            rangeIn("value", valueRange, value),
+            rangeIn("precision", precisionRange, value.toString().split(".")[1].count())
+        )
 }
 
 class IntegerValidationPredicate(
@@ -142,7 +160,8 @@ class JsonObjectValidationPredicate(
 
             when (predicate) {
                 is JsonObjectValidationPredicate -> testChildrenAsserts(key, obj.getJSONObject(key), predicate)
-                is IntegerValidationPredicate -> testChildrenAsserts(key, obj.getStillLong(key), predicate)
+                is DecimalValidationPredicate -> testChildrenAsserts(key, obj.getDouble(key), predicate)
+                is IntegerValidationPredicate -> testChildrenAsserts(key, obj.getLong(key), predicate)
                 is StringValidationPredicate -> testChildrenAsserts(key, obj.getString(key), predicate)
                 is BooleanValidationPredicate -> testChildrenAsserts(key, obj.getBoolean(key), predicate)
             }

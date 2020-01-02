@@ -20,7 +20,7 @@ private const val max = Int.MAX_VALUE
 private val maxRange = 0..max
 
 class JsonObjectValidationScope(override val depth: Int, private val config: SiriusValidationConfig) :
-    ValidationScopeWithLengthAndTestsProperty<JSONObject, JsonObjectValidationPredicate>(depth, config) {
+    ValidationScopeWithLength<JSONObject, JsonObjectValidationPredicate>(depth, config) {
 
     private val children = hashMapOf<String, AnyValidationPredicate>()
     private val regexChildren = hashMapOf<Regex, AnyValidationPredicate>()
@@ -35,6 +35,10 @@ class JsonObjectValidationScope(override val depth: Int, private val config: Sir
     }
 
     infix fun String.integer(block: IntegerValidationScope.() -> Unit) {
+        children += this to jsonObjectIntercept(block, key = this, depth = depth, config = config)
+    }
+
+    infix fun String.decimal(block: DecimalValidationScope.() -> Unit) {
         children += this to jsonObjectIntercept(block, key = this, depth = depth, config = config)
     }
 
@@ -67,6 +71,11 @@ class JsonObjectValidationScope(override val depth: Int, private val config: Sir
     }
 
     infix fun Regex.integer(block: IntegerValidationScope.() -> Unit) {
+        regexChildren += this to jsonObjectIntercept(block, key = this.toString(), depth = depth, config = config)
+    }
+
+
+    infix fun Regex.decimal(block: DecimalValidationScope.() -> Unit) {
         regexChildren += this to jsonObjectIntercept(block, key = this.toString(), depth = depth, config = config)
     }
 
@@ -114,7 +123,7 @@ class JsonObjectValidationScope(override val depth: Int, private val config: Sir
 }
 
 class BooleanValidationScope(override val depth: Int, config: SiriusValidationConfig) :
-    ValidationScope<BooleanValidationPredicate>(depth, config) {
+    ValidationScope<Boolean, BooleanValidationPredicate>(depth, config) {
 
     var expected = false
         set(value) {
@@ -127,8 +136,40 @@ class BooleanValidationScope(override val depth: Int, config: SiriusValidationCo
     override fun build() = BooleanValidationPredicate(isRequired, isNullable, depth, expected, expectedInitialized)
 }
 
+class DecimalValidationScope(override val depth: Int, config: SiriusValidationConfig) :
+    ValidationScope<Double, DecimalValidationPredicate>(depth, config) {
+
+    var min = 0.0
+    var max = Double.MAX_VALUE
+
+    var precision = -1
+    var precisionRange = 0..Int.MAX_VALUE
+
+    private val expectedList = mutableListOf<Double>()
+
+    /**
+     * @see [IntegerValidationScope.expected]
+     */
+    fun expected(vararg expected: Double) {
+        if (expected.size == 1)
+            expectedList.clear()
+        expectedList += expected.toTypedArray()
+    }
+
+    override fun build(): DecimalValidationPredicate =
+        DecimalValidationPredicate(
+            isRequired,
+            isNullable,
+            buildLambdaTests(),
+            depth,
+            min..max,
+            if (precision != -1) precision..precision else precisionRange,
+            expectedList
+        )
+}
+
 class IntegerValidationScope(override val depth: Int, config: SiriusValidationConfig) :
-    ValidationScopeWithLengthAndTestsProperty<Long, IntegerValidationPredicate>(depth, config) {
+    ValidationScopeWithLength<Long, IntegerValidationPredicate>(depth, config) {
 
     var min = 0
     var max = Long.MAX_VALUE
@@ -136,7 +177,7 @@ class IntegerValidationScope(override val depth: Int, config: SiriusValidationCo
     private val expectedList = mutableListOf<Long>()
 
     /**
-     * As in [ray.eldath.sirius.core.StringValidationScope.expected], this function will add all
+     * As in [StringValidationScope.expected], this function will add all
      * provided integer to the expected list, excepts when only one integer provided in an invocation
      * at any time. In that case, the only provided integer will become the only one expected.
      *
@@ -161,7 +202,7 @@ class IntegerValidationScope(override val depth: Int, config: SiriusValidationCo
 }
 
 class StringValidationScope(override val depth: Int, private val config: SiriusValidationConfig) :
-    ValidationScopeWithLengthAndTestsProperty<String, StringValidationPredicate>(depth, config) {
+    ValidationScopeWithLength<String, StringValidationPredicate>(depth, config) {
 
     val nonEmpty: Unit
         get() {
@@ -238,7 +279,7 @@ class StringValidationScope(override val depth: Int, private val config: SiriusV
             }
         }
 
-        builtInAcceptIf("all chars of the string must is one of the following type: $contentRequirements") { str ->
+        builtInAcceptIf("all chars of the string must be one of the following type: $contentRequirements") { str ->
             str.all { char ->
                 handlers.any { handler -> handler(char) }
             }
@@ -299,10 +340,13 @@ class StringValidationScope(override val depth: Int, private val config: SiriusV
 
         if (contentRequirements.isNotEmpty()) integrateContentRequirements()
 
-        if (expectedList.isNotEmpty())
-            builtInAcceptIf("the string must literally equal to one of the given string: $expectedList") {
-                expectedList.any { expected -> it == expected }
+        if (expectedList.isNotEmpty()) {
+            val t = if (expectedIgnoreCase) "case-insensitively" else "literately"
+            builtInAcceptIf("the string must $t equal to one of the given string: $expectedList") {
+                expectedList.any { expected -> it.equals(expected, expectedIgnoreCase) }
             }
+        }
+
 
         if (allPrefixes.isNotEmpty())
             builtInAcceptIf("the string must starts with one of the given prefixes: $allPrefixes") {
@@ -346,17 +390,11 @@ private operator fun <E : Comparable<E>, T : ClosedRange<E>> T.contains(smaller:
 
 // left due to sealed class's constraint
 @TopClassValidationScopeMarker
-sealed class ValidationScope<T : AnyValidationPredicate>(open val depth: Int, config: SiriusValidationConfig) :
-    BasicOption(config.requiredByDefault, config.nullableByDefault) {
-
-    internal abstract fun build(): T
-    internal open fun isAssertsValid(): Map<Boolean, String> = mapOf(true to "")
-}
-
-sealed class ValidationScopeWithLengthAndTestsProperty<E, T : ValidationPredicate<E>>(
-    override val depth: Int,
+sealed class ValidationScope<E, T : AnyValidationPredicate>(
+    open val depth: Int,
     config: SiriusValidationConfig
-) : ValidationScopeWithLengthProperty<T>(depth, config) {
+) : BasicOption(config.requiredByDefault, config.nullableByDefault) {
+
     private val lambdaTests = arrayListOf<LambdaTest<E>>()
 
     /**
@@ -376,12 +414,15 @@ sealed class ValidationScopeWithLengthAndTestsProperty<E, T : ValidationPredicat
     }
 
     fun buildLambdaTests() = lambdaTests.toList()
+
+    internal abstract fun build(): T
+    internal open fun isAssertsValid(): Map<Boolean, String> = mapOf(true to "")
 }
 
-sealed class ValidationScopeWithLengthProperty<T : AnyValidationPredicate>(
+sealed class ValidationScopeWithLength<E, T : AnyValidationPredicate>(
     override val depth: Int,
     config: SiriusValidationConfig
-) : ValidationScope<T>(depth, config) {
+) : ValidationScope<E, T>(depth, config) {
     var lengthExact = 0
     var lengthRange = 0..max
 

@@ -6,7 +6,7 @@ import ray.eldath.sirius.core.JsonObjectValidationScope
 
 // checkpoint
 fun rootJsonObject(
-    requiredByDefault: Boolean = false,
+    requiredByDefault: Boolean = true,
     nullableByDefault: Boolean = false,
     stringNonEmptyByDefault: Boolean = false,
     stringNonBlankByDefault: Boolean = false,

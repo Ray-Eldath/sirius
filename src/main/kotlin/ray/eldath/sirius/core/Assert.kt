@@ -44,7 +44,7 @@ internal class AssertWrapper<T>(
     val asserts: List<AnyAssert> = emptyList(),
     val tests: List<LambdaTest<T>> = emptyList()
 )
-// may be not as a assert?
+// may be not as an assertion?
 // I wrote this due to I was too sleepy at that time. Apologize.
 
 // internal class LambdaAssert<T>(val lambda: Predicate<T>, val input: T) : Assert<Predicate<T>>(lambda, null) {

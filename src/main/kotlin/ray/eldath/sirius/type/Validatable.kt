@@ -13,6 +13,7 @@ enum class Validatable(
     JSON_OBJECT("JsonObject", JSONObject::class),
     JSON_ARRAY("JsonArray", JSONArray::class),
     STRING("string", String::class),
+    DECIMAL("decimal", Double::class, "Double", "Float"),
     INTEGER("integer", Long::class, "Integer", "Long"),
     BOOLEAN("boolean", Boolean::class);
 
@@ -22,6 +23,7 @@ enum class Validatable(
                 is StringValidationPredicate -> STRING
                 is JsonObjectValidationPredicate -> JSON_OBJECT
                 is IntegerValidationPredicate -> INTEGER
+                is DecimalValidationPredicate -> DECIMAL
                 is BooleanValidationPredicate -> BOOLEAN
             }
 
@@ -30,6 +32,7 @@ enum class Validatable(
                 is StringValidationScope -> STRING
                 is JsonObjectValidationScope -> JSON_OBJECT
                 is IntegerValidationScope -> INTEGER
+                is DecimalValidationScope -> DECIMAL
                 is BooleanValidationScope -> BOOLEAN
             }
     }

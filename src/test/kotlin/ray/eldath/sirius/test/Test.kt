@@ -7,7 +7,7 @@ import ray.eldath.sirius.util.StringContentPattern.*
 object Test {
     @JvmStatic
     fun main(args: Array<String>) {
-        val root = rootJsonObject(requiredByDefault = true) {
+        val root = rootJsonObject {
             "abc" string {
                 lengthExact = 9
                 requireCase(StringCase.PASCAL_CASE)

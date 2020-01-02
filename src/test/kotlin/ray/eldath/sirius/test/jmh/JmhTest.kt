@@ -9,7 +9,6 @@ import org.openjdk.jmh.runner.Runner
 import org.openjdk.jmh.runner.options.OptionsBuilder
 import ray.eldath.sirius.api.rootJsonObject
 import ray.eldath.sirius.core.JsonObjectValidationPredicate
-import ray.eldath.sirius.util.StringCase
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.util.concurrent.TimeUnit
@@ -30,10 +29,10 @@ import java.util.concurrent.TimeUnit
 open class JmhTest {
     private val json: String = """
             {
-                "abc": "1234567890",
+                "abc": 123450,
                 "abd": {
-                    "123": "RayEldath",
-                    "456": "pre_  \t_END"
+                    "456": "pre_  \t_END",
+                    "789": 123.4567
                 },
                 "cde": {
                     "456": true,
@@ -57,19 +56,21 @@ open class JmhTest {
     @Benchmark
     @Setup
     fun build() {
-        root = rootJsonObject(requiredByDefault = true) {
-            "abc" string {
+        root = rootJsonObject {
+            "abc" integer {
                 maxLength = 9
-                lengthRange = 1..10
-                acceptIf { it.length in 1..12 }
+                lengthRange = 6..10
             }
 
             "abd" jsonObject {
-                "123" string { requireCase(StringCase.PASCAL_CASE) }
                 "456" string {
                     nonBlank
                     startsWithAny("Pre", "pre_")
                     endsWithAny("end", ignoreCase = true)
+                }
+                "789" decimal {
+                    max = 124.0
+                    precision = 4
                 }
             }
 

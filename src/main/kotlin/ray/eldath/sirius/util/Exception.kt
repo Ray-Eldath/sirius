@@ -26,7 +26,7 @@ sealed class SiriusException(override val message: String) : Exception(message)
 sealed class InvalidSchemaException(override val message: String) : SiriusException(message) {
     /**
      * If one of your asserts you set in a test block is invalid (like set
-     * [ray.eldath.sirius.core.ValidationScopeWithLengthProperty.minLength]
+     * [ray.eldath.sirius.core.ValidationScopeWithLength.minLength]
      * less than `0`), [InvalidAssertException] will be thrown.
      */
     class InvalidAssertException(override val message: String) : InvalidSchemaException(message)

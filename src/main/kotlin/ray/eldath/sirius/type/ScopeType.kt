@@ -26,7 +26,7 @@ open class BasicOption(require: Boolean, nullable: Boolean) {
         get() = run { isNullable = false }
 }
 
-typealias AnyValidationScope = ValidationScope<*>
+typealias AnyValidationScope = ValidationScope<*, *>
 
 @DslMarker
 annotation class TopClassValidationScopeMarker

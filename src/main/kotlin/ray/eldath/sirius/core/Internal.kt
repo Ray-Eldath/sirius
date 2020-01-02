@@ -5,7 +5,7 @@ import ray.eldath.sirius.type.LambdaTest
 import ray.eldath.sirius.util.ExceptionAssembler
 
 object PredicateBuildInterceptor {
-    internal inline fun <E, reified T : ValidationScope<out E>> jsonObjectIntercept(
+    internal inline fun <E, reified T : ValidationScope<*, out E>> jsonObjectIntercept(
         initializer: T.() -> Unit,
         key: String,
         depth: Int,

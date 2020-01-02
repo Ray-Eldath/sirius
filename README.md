@@ -13,9 +13,9 @@
    - [X] `required`
    - [X] `any { }`
  - [ ] Validation DSL
-   - [ ] Number
+   - [X] Number
    - [X] Boolean
-   - [ ] String
+   - [X] String
    - [X] JSON Object
    - [ ] JSON Array
    - [X] `null`
