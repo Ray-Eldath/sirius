@@ -26,12 +26,23 @@ class JsonObjectValidationScope(override val depth: Int, private val config: Sir
     private val regexChildren = hashMapOf<Regex, AnyValidationPredicate>()
     private var _any: JsonObjectValidationScope? = null
 
+    infix fun String.jsonObject(block: JsonObjectValidationScope.() -> Unit) {
+        children += this to jsonObjectIntercept(block, key = this, depth = depth, config = config)
+    }
+
     infix fun String.string(block: StringValidationScope.() -> Unit) {
         children += this to jsonObjectIntercept(block, key = this, depth = depth, config = config)
     }
 
-    infix fun String.jsonObject(block: JsonObjectValidationScope.() -> Unit) {
+    infix fun String.integer(block: IntegerValidationScope.() -> Unit) {
         children += this to jsonObjectIntercept(block, key = this, depth = depth, config = config)
+    }
+
+    /**
+     * For convenience. This will take `required` and `nullable` from [SiriusValidationConfig].
+     */
+    infix fun String.boolean(excepted: Boolean) {
+        boolean { expected = excepted }
     }
 
     infix fun String.boolean(block: BooleanValidationScope.() -> Unit) {
@@ -47,12 +58,20 @@ class JsonObjectValidationScope(override val depth: Int, private val config: Sir
      */
     operator fun @receiver: Language("RegExp") String.unaryPlus() = Regex(this)
 
+    infix fun Regex.jsonObject(block: JsonObjectValidationScope.() -> Unit) {
+        regexChildren += this to jsonObjectIntercept(block, key = this.toString(), depth = depth, config = config)
+    }
+
     infix fun Regex.string(block: StringValidationScope.() -> Unit) {
         regexChildren += this to jsonObjectIntercept(block, key = this.toString(), depth = depth, config = config)
     }
 
-    infix fun Regex.jsonObject(block: JsonObjectValidationScope.() -> Unit) {
+    infix fun Regex.integer(block: IntegerValidationScope.() -> Unit) {
         regexChildren += this to jsonObjectIntercept(block, key = this.toString(), depth = depth, config = config)
+    }
+
+    infix fun Regex.boolean(excepted: Boolean) {
+        boolean { expected = excepted }
     }
 
     infix fun Regex.boolean(block: BooleanValidationScope.() -> Unit) {
@@ -84,7 +103,7 @@ class JsonObjectValidationScope(override val depth: Int, private val config: Sir
             tests = this.buildLambdaTests(),
             children = children,
             regexChildren = regexChildren,
-            lengthRange = this.buildRange(), // inherit
+            lengthRange = this.buildLengthRange(), // inherit
             required = isRequired,
             nullable = isNullable,
             depth = depth,
@@ -108,6 +127,39 @@ class BooleanValidationScope(override val depth: Int, config: SiriusValidationCo
     override fun build() = BooleanValidationPredicate(isRequired, isNullable, depth, expected, expectedInitialized)
 }
 
+class IntegerValidationScope(override val depth: Int, config: SiriusValidationConfig) :
+    ValidationScopeWithLengthAndTestsProperty<Long, IntegerValidationPredicate>(depth, config) {
+
+    var min = 0
+    var max = Long.MAX_VALUE
+
+    private val expectedList = mutableListOf<Long>()
+
+    /**
+     * As in [ray.eldath.sirius.core.StringValidationScope.expected], this function will add all
+     * provided integer to the expected list, excepts when only one integer provided in an invocation
+     * at any time. In that case, the only provided integer will become the only one expected.
+     *
+     * @param expected list of expected value
+     */
+    fun expected(vararg expected: Long) {
+        if (expected.size == 1)
+            expectedList.clear()
+        expectedList += expected.toTypedArray()
+    }
+
+    override fun build(): IntegerValidationPredicate =
+        IntegerValidationPredicate(
+            isRequired,
+            isNullable,
+            buildLambdaTests(),
+            depth,
+            min..max,
+            buildLengthRange(),
+            expectedList
+        )
+}
+
 class StringValidationScope(override val depth: Int, private val config: SiriusValidationConfig) :
     ValidationScopeWithLengthAndTestsProperty<String, StringValidationPredicate>(depth, config) {
 
@@ -123,7 +175,7 @@ class StringValidationScope(override val depth: Int, private val config: SiriusV
 
     val noWhitespaceSurrounded: Unit
         get() {
-            builtInAcceptIf("the string can not have leading or trailing whitespace") { it.trim() == it }
+            builtInAcceptIf("the string cannot have leading or trailing whitespace") { it.trim() == it }
         }
 
     private val expectedList = mutableListOf<String>()
@@ -131,8 +183,9 @@ class StringValidationScope(override val depth: Int, private val config: SiriusV
 
     /**
      * The string should literally equal to one of the given strings. If this function is called
-     * more than once, all given string will be treated as the expected strings. **But if** only
-     * one string is given in any invocation, the string will become the only expected string.
+     * more than once, all given string will be treated as the expected strings, **excepts** when
+     * only one string provided in an invocation at any time. In that case, the only provided
+     * string will become the only one expected.
      *
      * That is to say, if you define a scope:
      *
@@ -156,14 +209,15 @@ class StringValidationScope(override val depth: Int, private val config: SiriusV
         expectedList += expected
     }
 
-    fun regex(regex: Regex) {
-        builtInAcceptIf("the string must matches the given regex $regex") { it.matches(regex) }
+    fun matches(@Language(value = "RegExp") regex: String) {
+        builtInAcceptIf("the string must matches the given regex $regex") { it.matches(Regex(regex)) }
     }
 
     private val contentRequirements = hashSetOf<StringContentPattern>()
 
     /**
      * Require the string consists of the given types of chars.
+     * *Any* passed requirement will induce the string passed.
      *
      * @param contentPattern the types of chars. See [StringContentPattern]
      * @see [StringContentPattern]
@@ -265,7 +319,7 @@ class StringValidationScope(override val depth: Int, private val config: SiriusV
         integrateTests()
 
         return StringValidationPredicate(
-            lengthRange = this.buildRange(),
+            lengthRange = this.buildLengthRange(),
             required = isRequired,
             nullable = isNullable,
             tests = this.buildLambdaTests(),
@@ -343,9 +397,9 @@ sealed class ValidationScopeWithLengthProperty<T : AnyValidationPredicate>(
      *   3. Otherwise, the target length range is from [minLength] to [maxLength].
      *      Note that there are default values for both two.
      *
-     * @sample buildRange
+     * @sample buildLengthRange
      */
-    protected fun buildRange(): IntRange =
+    protected fun buildLengthRange(): IntRange =
         when {
             lengthExact != 0 -> lengthExact..lengthExact
             lengthRange != maxRange -> lengthRange

@@ -124,18 +124,16 @@ internal object ExceptionAssembler {
             depth: Int,
             label: Validatable,
             args: Array<out Any>
-        ): String {
-            return when (label) {
-                JSON_OBJECT -> {
-                    require(args.isNotEmpty() && args[0] is String)
-                    jsonObjectExceptionHeader(type, propertyName, element, args[0] as String /* key: String */, depth)
-                }
-                JSON_ARRAY -> {
-                    require(args.isEmpty())
-                    TODO()
-                }
-                else -> throw IllegalArgumentException("Failed property requirement.")
+        ): String = when (label) {
+            JSON_OBJECT -> {
+                require(args.isNotEmpty() && args[0] is String)
+                jsonObjectExceptionHeader(type, propertyName, element, args[0] as String /* key: String */, depth)
             }
+            JSON_ARRAY -> {
+                require(args.isEmpty())
+                TODO()
+            }
+            else -> throw IllegalArgumentException("Failed property requirement.")
         }
 
         private fun jsonObjectExceptionHeader(type: String, propertyName: String = "", element: AnyValidationPredicate, key: String, depth: Int): String {

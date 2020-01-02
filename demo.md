@@ -16,7 +16,7 @@ jsonObject {
             test { }
         }
     
-        "a_number" number {
+        "a_number" integer {
             required
             it in 14.0..123.2
             // or: min = 14.0 or max = 123.2
@@ -30,7 +30,7 @@ jsonObject {
     }
     
     "a_array" jsonArray {
-        not every {
+        every {
         }
 
         any {

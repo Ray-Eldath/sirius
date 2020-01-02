@@ -2,6 +2,7 @@ package ray.eldath.sirius.core
 
 import org.json.JSONObject
 import org.json.JSONTokener
+import ray.eldath.sirius.core.Asserts.contain
 import ray.eldath.sirius.core.Asserts.equals
 import ray.eldath.sirius.core.Asserts.rangeIn
 import ray.eldath.sirius.type.AnyValidationPredicate
@@ -15,8 +16,22 @@ import ray.eldath.sirius.util.ExceptionAssembler.jsonObjectTypeMismatch
 import ray.eldath.sirius.util.SiriusException
 import ray.eldath.sirius.util.Util
 import ray.eldath.sirius.util.ValidationException
+import ray.eldath.sirius.util.getStillLong
 
 // overridden values should be prefixed for named argument
+class BooleanValidationPredicate(
+    override val required: Boolean,
+    override val nullable: Boolean,
+    override val depth: Int,
+    val expected: Boolean,
+    val expectedInitialized: Boolean // `expected` is set or not
+) : ValidationPredicate<Boolean>(required = required, nullable = nullable, depth = depth) {
+
+    override fun test(value: Boolean): AssertWrapper<Boolean> =
+        if (!expectedInitialized) assertsOf(tests)
+        else assertsOf(tests, equals("expected", expected = expected, actual = value))
+}
+
 class StringValidationPredicate(
     override val required: Boolean,
     override val nullable: Boolean,
@@ -34,17 +49,31 @@ class StringValidationPredicate(
     override fun toString(): String = Util.reflectionToStringWithStyle(this)
 }
 
-class BooleanValidationPredicate(
+class IntegerValidationPredicate(
     override val required: Boolean,
     override val nullable: Boolean,
+    override val tests: List<LambdaTest<Long>>,
     override val depth: Int,
-    val expected: Boolean,
-    val expectedInitialized: Boolean // `expected` is set or not
-) : ValidationPredicate<Boolean>(required = required, nullable = nullable, depth = depth) {
+    val valueRange: LongRange = 0..Long.MAX_VALUE,
+    val digitsRange: IntRange = 0..Int.MAX_VALUE,
+    val expected: List<Long> = emptyList()
+) : ValidationPredicate<Long>(required, nullable, tests, depth) {
 
-    override fun test(value: Boolean): AssertWrapper<Boolean> =
-        if (!expectedInitialized) assertsOf(tests)
-        else assertsOf(tests, equals("expected", expected = expected, actual = value))
+    override fun test(value: Long): AssertWrapper<Long> {
+        var int = value
+        var digits = 0
+        do {
+            int /= 10
+            digits++
+        } while (int > 0)
+
+        return assertsOf(
+            tests,
+            contain("value", expected, value),
+            rangeIn("value", valueRange, value),
+            rangeIn("digits", digitsRange, digits)
+        )
+    }
 }
 
 class JsonObjectValidationPredicate(
@@ -104,16 +133,17 @@ class JsonObjectValidationPredicate(
         throwIf(isNull && !predicate.nullable) { jsonObjectNPE(predicate, key, depth) }
 
         if (!isNull) {
-            // check type
             obj.get(key).let {
-                throwIf(it.javaClass.name != Validatable.fromPredicate(predicate).actualTypeName) {
+                // check type
+                throwIf(!Validatable.fromPredicate(predicate).actualTypeName.contains(it.javaClass.simpleName)) {
                     jsonObjectTypeMismatch(predicate, key, depth, it)
                 }
             }
 
             when (predicate) {
-                is StringValidationPredicate -> testChildrenAsserts(key, obj.getString(key), predicate)
                 is JsonObjectValidationPredicate -> testChildrenAsserts(key, obj.getJSONObject(key), predicate)
+                is IntegerValidationPredicate -> testChildrenAsserts(key, obj.getStillLong(key), predicate)
+                is StringValidationPredicate -> testChildrenAsserts(key, obj.getString(key), predicate)
                 is BooleanValidationPredicate -> testChildrenAsserts(key, obj.getBoolean(key), predicate)
             }
         }

@@ -24,9 +24,18 @@ object Test {
 
             "fgh" jsonObject {
                 "123" string { startsWithAny("pre", "cre") }
-                "234" string { endsWithAny("4") }
+                "234" string {
+                    endsWithAny("4")
+                    matches("\\S+")
+                }
                 "456" string { nonBlank }
                 +"45\\d" string { nonBlank }
+                Regex("45\\d") string { nonBlank }
+
+                "479" integer {
+                    lengthRange = 3..6
+                    max = 123456
+                }
             }
         }
 
@@ -41,7 +50,8 @@ object Test {
                     "123": "cre_123",
                     "234": "pre_220.34",
                     "456": "\t   123", 
-                    "457": "\t   123"
+                    "457": "\t   123",
+                    "479": 123456
                 }
             }
         """.trimIndent()

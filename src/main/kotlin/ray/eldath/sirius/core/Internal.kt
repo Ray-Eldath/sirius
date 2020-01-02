@@ -19,7 +19,6 @@ object PredicateBuildInterceptor {
         val applied = inst.apply(initializer)
 
         inst.isAssertsValid().filterKeys { !it }.map { it.value }.firstOrNull()?.let {
-            println(it)
             throw ExceptionAssembler.jsonObjectInvalidAssert(scope = inst, key = key, depth = d, reason = it)
         }
         return applied.build()

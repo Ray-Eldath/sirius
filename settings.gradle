@@ -1,7 +1,5 @@
 pluginManagement {
     repositories {
-        if (System.getenv("CI") == null)
-            maven { url "https://maven.aliyun.com/repository/gradle-plugin" }
         jcenter()
         maven { url "https://plugins.gradle.org/m2/" }
     }

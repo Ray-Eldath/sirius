@@ -21,11 +21,17 @@ import java.util.concurrent.TimeUnit
 @Measurement(iterations = 2, time = 8)
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
 @State(Scope.Benchmark)
+/**
+ * For JMH test only.
+ *
+ * Note that each type of test, except test for nesting performance, should
+ * be tested only once.
+ */
 open class JmhTest {
     private val json: String = """
             {
                 "abc": "1234567890",
-                "abd": { 
+                "abd": {
                     "123": "RayEldath",
                     "456": "pre_  \t_END"
                 },
@@ -59,7 +65,6 @@ open class JmhTest {
             }
 
             "abd" jsonObject {
-                "101" boolean { }
                 "123" string { requireCase(StringCase.PASCAL_CASE) }
                 "456" string {
                     nonBlank
@@ -71,7 +76,7 @@ open class JmhTest {
             "cde" jsonObject {
                 any {
                     "123" string {}
-                    "456" boolean { expected = true }
+                    "456" boolean (true)
                 }
 
                 "202" string {
