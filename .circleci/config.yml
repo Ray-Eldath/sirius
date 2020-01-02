@@ -14,8 +14,11 @@ jobs:
                 name: Chmod Permissions
                 command: sudo chmod +x ./gradlew
             - run:
-                name: Download Dependencies
-                command: ./gradlew buildDependents
+                  name: Lint
+                  command: ./gradlew detekt
+            - store_artifacts:
+                  path: build/reports/detekt
+                  destination: detekt
             - save_cache:
                 paths:
                     - ~/.gradle/wrapper
@@ -24,24 +27,6 @@ jobs:
                 paths:
                     - ~/.gradle/caches
                 key: v1-gradle-cache-{{ checksum "build.gradle" }}
-    lint:
-        docker:
-            - image: circleci/openjdk:11.0.4-jdk-stretch
-        steps:
-            - checkout
-            - restore_cache:
-                key: v1-gradle-wrapper-{{ checksum "gradle/wrapper/gradle-wrapper.properties" }}
-            - restore_cache:
-                key: v1-gradle-cache-{{ checksum "build.gradle" }}
-            - run:
-                name: Chmod Permissions
-                command: sudo chmod +x ./gradlew
-            - run:
-                name: Lint
-                command: ./gradlew detekt
-            - store_artifacts:
-                path: build/reports/detekt
-                destination: detekt
     build:
         docker:
             - image: circleci/openjdk:11.0.4-jdk-stretch
@@ -86,12 +71,9 @@ workflows:
   build:
       jobs:
           - dependencies
-          - lint:
-                requires:
-                    - dependencies
           - build:
                 requires:
-                    - lint
+                    - dependencies
   jmh:
       jobs:
           - hold:
