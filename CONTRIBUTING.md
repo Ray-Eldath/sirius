@@ -29,12 +29,12 @@ accepted types are:
 
  - `feat`: A new feature, related issue (if have) should be specified in the `<subject>` part.
  - `fix`: A new bugfix, related issue (if have) should be specified in the `<subject>` part.
- - `test`:  Changes that is purely related to the test suite only, the related test should be specified in the `<subject>` part.
+ - `test`: Changes that is purely related to the test suite only, the related test should be specified in the `<subject>` part.
  - `doc`: Changes to the API documentation in code, changes related to the project description documents (`README`, this document, etc) should be categorized to `misc`.
  - `perf`: Changes that significantly improves performance.
  - `style`: Changes that related to the style of the code or the naming of private API.
  - `misc`: Changes that do not directly relate to code, such as CI configuration, project description document, etc.
- - `*`: *(Use only if absolutely necessary)* Changes that can not be categorized due to its wide range of modification, or none of the types above is related.
+ - `*`: *(Use only if essential)* Changes that cannot be categorized due to its wide range of modification, or none of the types above is related.
 
 **We strongly suggest** that changes related to multiple features or issues be split into multiple commits.
 

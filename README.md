@@ -1,4 +1,4 @@
-# sirius [![phosphorus](https://forthebadge.com/images/badges/built-with-love.svg)](https://forthebadge.com)  [![forthebadge](https://forthebadge.com/images/badges/powered-by-electricity.svg)](https://forthebadge.com)
+# sirius [![](https://forthebadge.com/images/badges/built-with-love.svg)](https://forthebadge.com)  [![forthebadge](https://forthebadge.com/images/badges/powered-by-electricity.svg)](https://forthebadge.com)
 
 [![license](https://img.shields.io/github/license/Ray-Eldath/sirius?style=flat-square)](https://github.com/Ray-Eldath/sirius/blob/master/LICENSE) [![CodeFactor Grade](https://img.shields.io/codefactor/grade/github/Ray-Eldath/sirius/master?style=flat-square)](https://www.codefactor.io/repository/github/ray-eldath/sirius) [![DependaBot](https://flat.badgen.net/dependabot/Ray-Eldath/sirius/?icon=dependabot)](https://app.dependabot.com/accounts/Ray-Eldath/repos/203621031) [![CircleCI](https://img.shields.io/circleci/build/github/Ray-Eldath/sirius?logo=circleci&style=flat-square)](https://circleci.com/gh/Ray-Eldath/sirius)
 
@@ -7,6 +7,13 @@
 > Still work in progress, star & watch for further information information? :-)
 
 ### TODO
+
+**Now comes the bigger problems should be addressed first...**
+ - [ ] Unit test
+ - [ ] Refactor: exceptions and trace
+ - [ ] Refactor: architecture, lazify the build procedure
+
+---
 
  - [X] Fundamental architecture
  - [X] Global scope or option
