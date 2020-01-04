@@ -5,17 +5,17 @@ import org.json.JSONTokener
 import ray.eldath.sirius.core.Asserts.contain
 import ray.eldath.sirius.core.Asserts.equals
 import ray.eldath.sirius.core.Asserts.rangeIn
+import ray.eldath.sirius.trace.SiriusException
+import ray.eldath.sirius.trace.Tracer.JsonObjectCheckpoint
+import ray.eldath.sirius.trace.Tracer.JsonObjectCheckpoint.missingRequiredElement
+import ray.eldath.sirius.trace.Tracer.JsonObjectCheckpoint.nullPointer
+import ray.eldath.sirius.trace.Tracer.JsonObjectCheckpoint.typeMismatch
+import ray.eldath.sirius.trace.ValidationException
 import ray.eldath.sirius.type.AnyValidationPredicate
 import ray.eldath.sirius.type.LambdaTest
 import ray.eldath.sirius.type.TopPredicate
 import ray.eldath.sirius.type.Validatable
-import ray.eldath.sirius.util.ExceptionAssembler.IVEAssembler
-import ray.eldath.sirius.util.ExceptionAssembler.jsonObjectMissingRequiredElement
-import ray.eldath.sirius.util.ExceptionAssembler.jsonObjectNPE
-import ray.eldath.sirius.util.ExceptionAssembler.jsonObjectTypeMismatch
-import ray.eldath.sirius.util.SiriusException
 import ray.eldath.sirius.util.Util
-import ray.eldath.sirius.util.ValidationException
 
 // overridden values should be prefixed for named argument
 class BooleanValidationPredicate(
@@ -133,28 +133,29 @@ class JsonObjectValidationPredicate(
         entries.forEach { (key, predicate) ->
             try {
                 testChildrenPredicate(obj, key, predicate)
+                return // even only one child passed, the whole block passed.
             } catch (e: SiriusException) {
                 counter += 1
             }
         }
 
         if (counter == entries.size)
-            throw IVEAssembler.anyBlock(depth)
+            throw JsonObjectCheckpoint.any(depth)
     }
 
     private fun testChildrenPredicate(obj: JSONObject, key: String, predicate: AnyValidationPredicate) {
         val isNull = obj.isNull(key)
 
         // check existence
-        throwIf(!obj.has(key) && predicate.required) { jsonObjectMissingRequiredElement(predicate, key, depth) }
+        throwIf(!obj.has(key) && predicate.required) { missingRequiredElement(predicate, key, depth) }
         // check nullability
-        throwIf(isNull && !predicate.nullable) { jsonObjectNPE(predicate, key, depth) }
+        throwIf(isNull && !predicate.nullable) { nullPointer(predicate, key, depth) }
 
         if (!isNull) {
             obj.get(key).let {
                 // check type
                 throwIf(!Validatable.fromPredicate(predicate).actualTypeName.contains(it.javaClass.simpleName)) {
-                    jsonObjectTypeMismatch(predicate, key, depth, it)
+                    typeMismatch(predicate, key, depth, it)
                 }
             }
 
@@ -185,16 +186,16 @@ class JsonObjectValidationPredicate(
     ) =
         tests.forEachIndexed { index, (lambdaTest, purpose, isBuiltIn) ->
             if (!lambdaTest(element))
-                throw IVEAssembler.lambda(index + 1, predicate, depth, key, purpose, isBuiltIn)
+                throw JsonObjectCheckpoint.lambda(index + 1, predicate, depth, key, purpose, isBuiltIn)
         }.let { true }
 
     private fun testAsserts(asserts: List<AnyAssert>, key: String, predicate: AnyValidationPredicate) =
         asserts.forEach {
             if (!it.test())
                 throw when (it) {
-                    is RangeAssert<*> -> IVEAssembler.range(it, predicate, depth, key)
-                    is ContainAssert -> IVEAssembler.contain(it, predicate, depth, key)
-                    is EqualAssert -> IVEAssembler.equal(it, predicate, depth, key)
+                    is RangeAssert<*> -> JsonObjectCheckpoint.range(it, predicate, depth, key)
+                    is ContainAssert -> JsonObjectCheckpoint.contain(it, predicate, depth, key)
+                    is EqualAssert -> JsonObjectCheckpoint.equal(it, predicate, depth, key)
                 }
         }.let { true }
 

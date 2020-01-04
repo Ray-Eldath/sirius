@@ -6,11 +6,11 @@ import org.intellij.lang.annotations.Language
 import org.json.JSONObject
 import ray.eldath.sirius.config.SiriusValidationConfig
 import ray.eldath.sirius.core.PredicateBuildInterceptor.jsonObjectIntercept
+import ray.eldath.sirius.trace.Tracer.AllCheckpoint.multipleAnyBlock
 import ray.eldath.sirius.type.AnyValidationPredicate
 import ray.eldath.sirius.type.BasicOption
 import ray.eldath.sirius.type.LambdaTest
 import ray.eldath.sirius.type.TopClassValidationScopeMarker
-import ray.eldath.sirius.util.ExceptionAssembler
 import ray.eldath.sirius.util.StringCase
 import ray.eldath.sirius.util.StringCase.*
 import ray.eldath.sirius.util.StringContentPattern
@@ -89,7 +89,7 @@ class JsonObjectValidationScope(override val depth: Int, private val config: Sir
 
     fun any(block: JsonObjectValidationScope.() -> Unit) {
         if (_any != null)
-            throw ExceptionAssembler.multipleAnyBlock(this, depth)
+            throw multipleAnyBlock(this, depth)
         else {
             _any = JsonObjectValidationScope(depth + 1, config)
             _any?.apply(block)

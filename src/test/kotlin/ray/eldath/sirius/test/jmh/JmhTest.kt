@@ -40,7 +40,7 @@ open class JmhTest {
                     "303": null,
                     "789": {
                         "t": "nothing",
-                        "T": "everything"
+                        "T": 123
                     },
                     "101": {
                         "something": "ss",
@@ -68,6 +68,7 @@ open class JmhTest {
                     startsWithAny("Pre", "pre_")
                     endsWithAny("end", ignoreCase = true)
                 }
+
                 "789" decimal {
                     max = 124.0
                     precision = 4
@@ -77,19 +78,19 @@ open class JmhTest {
             "cde" jsonObject {
                 any {
                     "123" string {}
-                    "456" boolean (true)
+                    "456" boolean true
                 }
 
                 "202" string {
-                    acceptIf { it.startsWith("pre_") || it.endsWith("_ends") }
+                    acceptIf { true }
                 }
 
                 "303" boolean { nullable }
 
                 "789" jsonObject {
                     any {
-                        "t" string { expected("something") }
-                        "T" string { expected("everything", "something") }
+                        "t" string { expected("something", "nothing") }
+                        "T" decimal {}
                     }
                 }
 
@@ -125,13 +126,17 @@ open class JmhTest {
 
         @JvmStatic
         fun main(vararg args: String) {
-            if (args.size == 1 && args[0].toLowerCase() == "debug") {
-                val instance = JmhTest()
-                instance.build()
-                instance.test().also {
-                    println(it)
-                    assert(it)
-                }
+            if (args.size == 1) {
+                val mode = args[0].toLowerCase()
+                val instance = JmhTest().also { it.build() }
+
+                if (mode == "debug")
+                    instance.test().also {
+                        println(it)
+                        assert(it)
+                    }
+                else
+                    System.`in`.read()
                 return
             }
             val dirPath = Paths.get(dir)

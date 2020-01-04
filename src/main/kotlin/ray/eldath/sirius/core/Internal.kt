@@ -1,8 +1,8 @@
 package ray.eldath.sirius.core
 
 import ray.eldath.sirius.config.SiriusValidationConfig
+import ray.eldath.sirius.trace.Tracer.JsonObjectCheckpoint.invalidAssert
 import ray.eldath.sirius.type.LambdaTest
-import ray.eldath.sirius.util.ExceptionAssembler
 
 object PredicateBuildInterceptor {
     internal inline fun <E, reified T : ValidationScope<*, out E>> jsonObjectIntercept(
@@ -19,7 +19,7 @@ object PredicateBuildInterceptor {
         val applied = inst.apply(initializer)
 
         inst.isAssertsValid().filterKeys { !it }.map { it.value }.firstOrNull()?.let {
-            throw ExceptionAssembler.jsonObjectInvalidAssert(scope = inst, key = key, depth = d, reason = it)
+            throw invalidAssert(scope = inst, key = key, depth = d, reason = it)
         }
         return applied.build()
     }
