@@ -53,7 +53,7 @@ Related code are in `/src/test/kotlin/.../jmh` folder.
 
 > *Buy me a coffee...?*
 > 
-> <a href="https://www.buymeacoffee.com/RayEldath" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/default-blue.png" alt="Buy Me A Coffee" style="height: 51px !important;width: 217px !important;" ></a>
+> <a href="https://www.buymeacoffee.com/RayEldath" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/default-blue.png" alt="Buy Me A Coffee" style="zoom:65%;" ></a>
 
 This project is developed with IntelliJ IDEA Ultimate and the subscription is obtained freely from [Jetbrains Open Source Support Program](https://www.jetbrains.com/community/opensource/). Thanks to Jetbrains!
 
