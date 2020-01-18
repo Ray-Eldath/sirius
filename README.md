@@ -34,13 +34,11 @@
 
 ## Performance
 
-### This section is outdated, will be updated soon...
+The two graphs posted below is showing the JMH test result on CircleCI, with 2 CPU cores and 4 GB memory. Each test is warmed-up 4 seconds, repeated twice, and then formally tested 8 seconds, repeated twice. The whole procedure will be repeated twice as well.
 
-The two graphs posted below is tested on CircleCI, with 2 CPU cores and 4 GB memory. Each test is warmed-up 8 seconds, repeated twice, and then formally tested 10 seconds, repeated 4 times. The whole procedure will be repeated twice as well. 
+Two-part of Sirius, build a schema (`build`), and the validation of a given JSON string (`test`), are tested using JMH with the procedure described above. Note that the `test` part naturally involved the parsing of the given JSON string (`parse`), so the pure test procedure in which the parsing is not included is measured by `pureTest`.
 
-Two-part of Sirius, build a schema (`build`) and the validation of a given JSON string (`test`), are tested using JMH with the procedure described above.
-
-The first graph is about throughput, which shows the number of times that the operation can be done in one millisecond. And the second graph is about the norm of allocation rate (AR), which shows how many bytes will be allocated during one execution. *Note that the parse of JSON string using `org.json` also counted as well.*
+The first graph is about throughput, which shows the number of times that the operation can be done in one millisecond. And the second graph is about the norm of allocation rate (AR), which shows how many bytes will be allocated during one execution. *Note that under some measurements the parsing of JSON string using `org.json` also counted as well.*
 
 ![Performance: Throughput](img/perf-thrpt.jpg)
 
