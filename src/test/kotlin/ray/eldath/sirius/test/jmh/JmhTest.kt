@@ -18,7 +18,7 @@ import java.util.concurrent.TimeUnit
 @Threads(1)
 @Warmup(iterations = 2, time = 4)
 @Measurement(iterations = 2, time = 8)
-@OutputTimeUnit(TimeUnit.MILLISECONDS)
+@OutputTimeUnit(TimeUnit.MICROSECONDS)
 @State(Scope.Benchmark)
 /**
  * For JMH test only.
