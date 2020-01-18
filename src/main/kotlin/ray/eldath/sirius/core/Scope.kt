@@ -6,11 +6,9 @@ import org.intellij.lang.annotations.Language
 import org.json.JSONObject
 import ray.eldath.sirius.config.SiriusValidationConfig
 import ray.eldath.sirius.core.PredicateBuildInterceptor.jsonObjectIntercept
-import ray.eldath.sirius.trace.Tracer.AllCheckpoint.multipleAnyBlock
-import ray.eldath.sirius.type.AnyValidationPredicate
-import ray.eldath.sirius.type.BasicOption
-import ray.eldath.sirius.type.LambdaTest
-import ray.eldath.sirius.type.TopClassValidationScopeMarker
+import ray.eldath.sirius.trace.Tracer.FreeTracer.multipleAnyBlock
+import ray.eldath.sirius.type.*
+import ray.eldath.sirius.type.ValidatableType.*
 import ray.eldath.sirius.util.StringCase
 import ray.eldath.sirius.util.StringCase.*
 import ray.eldath.sirius.util.StringContentPattern
@@ -20,7 +18,7 @@ private const val max = Int.MAX_VALUE
 private val maxRange = 0..max
 
 class JsonObjectValidationScope(override val depth: Int, private val config: SiriusValidationConfig) :
-    ValidationScopeWithLength<JSONObject, JsonObjectValidationPredicate>(depth, config) {
+    ValidationScopeWithLength<JSONObject, JsonObjectValidationPredicate>(JSON_OBJECT, depth, config) {
 
     private val children = hashMapOf<String, AnyValidationPredicate>()
     private val regexChildren = hashMapOf<Regex, AnyValidationPredicate>()
@@ -123,7 +121,7 @@ class JsonObjectValidationScope(override val depth: Int, private val config: Sir
 }
 
 class BooleanValidationScope(override val depth: Int, config: SiriusValidationConfig) :
-    ValidationScope<Boolean, BooleanValidationPredicate>(depth, config) {
+    ValidationScope<Boolean, BooleanValidationPredicate>(BOOLEAN, depth, config) {
 
     var expected = false
         set(value) {
@@ -137,7 +135,7 @@ class BooleanValidationScope(override val depth: Int, config: SiriusValidationCo
 }
 
 class DecimalValidationScope(override val depth: Int, config: SiriusValidationConfig) :
-    ValidationScope<Double, DecimalValidationPredicate>(depth, config) {
+    ValidationScope<Double, DecimalValidationPredicate>(DECIMAL, depth, config) {
 
     var min = 0.0
     var max = Double.MAX_VALUE
@@ -169,7 +167,7 @@ class DecimalValidationScope(override val depth: Int, config: SiriusValidationCo
 }
 
 class IntegerValidationScope(override val depth: Int, config: SiriusValidationConfig) :
-    ValidationScopeWithLength<Long, IntegerValidationPredicate>(depth, config) {
+    ValidationScopeWithLength<Long, IntegerValidationPredicate>(INTEGER, depth, config) {
 
     var min = 0
     var max = Long.MAX_VALUE
@@ -202,7 +200,7 @@ class IntegerValidationScope(override val depth: Int, config: SiriusValidationCo
 }
 
 class StringValidationScope(override val depth: Int, private val config: SiriusValidationConfig) :
-    ValidationScopeWithLength<String, StringValidationPredicate>(depth, config) {
+    ValidationScopeWithLength<String, StringValidationPredicate>(STRING, depth, config) {
 
     val nonEmpty: Unit
         get() {
@@ -391,15 +389,16 @@ private operator fun <E : Comparable<E>, T : ClosedRange<E>> T.contains(smaller:
 // left due to sealed class's constraint
 @TopClassValidationScopeMarker
 sealed class ValidationScope<E, T : AnyValidationPredicate>(
+    override val type: ValidatableType,
     open val depth: Int,
     config: SiriusValidationConfig
-) : BasicOption(config.requiredByDefault, config.nullableByDefault) {
+) : BasicOption(type, config.requiredByDefault, config.nullableByDefault) {
 
     private val lambdaTests = arrayListOf<LambdaTest<E>>()
 
     /**
      * If the predicate returns `true` for a given validatable element, the element
-     * will be accept, or it will be reject by throwing a [ray.eldath.sirius.util.InvalidValueException]
+     * will be accept, or it will be reject by throwing a [ray.eldath.sirius.trace.InvalidValueException]
      *
      * @param purpose (optional) the purpose of this lambda test, will be contained
      *                  in the exception if the predicate returns `false`.
@@ -420,9 +419,10 @@ sealed class ValidationScope<E, T : AnyValidationPredicate>(
 }
 
 sealed class ValidationScopeWithLength<E, T : AnyValidationPredicate>(
+    override val type: ValidatableType,
     override val depth: Int,
     config: SiriusValidationConfig
-) : ValidationScope<E, T>(depth, config) {
+) : ValidationScope<E, T>(type, depth, config) {
     var lengthExact = 0
     var lengthRange = 0..max
 

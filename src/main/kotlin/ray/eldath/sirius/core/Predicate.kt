@@ -5,16 +5,15 @@ import org.json.JSONTokener
 import ray.eldath.sirius.core.Asserts.contain
 import ray.eldath.sirius.core.Asserts.equals
 import ray.eldath.sirius.core.Asserts.rangeIn
+import ray.eldath.sirius.trace.ExceptionLocator.Companion.jsonObjectLocator
 import ray.eldath.sirius.trace.SiriusException
-import ray.eldath.sirius.trace.Tracer.JsonObjectCheckpoint
-import ray.eldath.sirius.trace.Tracer.JsonObjectCheckpoint.missingRequiredElement
-import ray.eldath.sirius.trace.Tracer.JsonObjectCheckpoint.nullPointer
-import ray.eldath.sirius.trace.Tracer.JsonObjectCheckpoint.typeMismatch
+import ray.eldath.sirius.trace.Tracer.LocationBasedTracer
+import ray.eldath.sirius.trace.Tracer.LocationBasedTracer.missingRequiredElement
+import ray.eldath.sirius.trace.Tracer.LocationBasedTracer.nullPointer
+import ray.eldath.sirius.trace.Tracer.LocationBasedTracer.typeMismatch
 import ray.eldath.sirius.trace.ValidationException
-import ray.eldath.sirius.type.AnyValidationPredicate
-import ray.eldath.sirius.type.LambdaTest
-import ray.eldath.sirius.type.TopPredicate
-import ray.eldath.sirius.type.Validatable
+import ray.eldath.sirius.type.*
+import ray.eldath.sirius.type.ValidatableType.*
 import ray.eldath.sirius.util.Util
 
 // overridden values should be prefixed for named argument
@@ -24,7 +23,7 @@ class BooleanValidationPredicate(
     override val depth: Int,
     val expected: Boolean,
     val expectedInitialized: Boolean // `expected` is set or not
-) : ValidationPredicate<Boolean>(required = required, nullable = nullable, depth = depth) {
+) : ValidationPredicate<Boolean>(BOOLEAN, required = required, nullable = nullable, depth = depth) {
 
     override fun test(value: Boolean): AssertWrapper<Boolean> =
         if (!expectedInitialized) assertsOf(tests)
@@ -37,7 +36,7 @@ class StringValidationPredicate(
     override val tests: List<LambdaTest<String>> = emptyList(),
     override val depth: Int,
     val lengthRange: IntRange = 0..Int.MAX_VALUE
-) : ValidationPredicate<String>(required, nullable, tests, depth) {
+) : ValidationPredicate<String>(STRING, required, nullable, tests, depth) {
 
     override fun test(value: String): AssertWrapper<String> =
         assertsOf(
@@ -56,7 +55,7 @@ class DecimalValidationPredicate(
     val valueRange: Range<Double> = 0.0..Double.MAX_VALUE,
     val precisionRange: IntRange = 0..Int.MAX_VALUE,
     val expected: List<Double> = emptyList()
-) : ValidationPredicate<Double>(required, nullable, tests, depth) {
+) : ValidationPredicate<Double>(DECIMAL, required, nullable, tests, depth) {
 
     override fun test(value: Double): AssertWrapper<Double> =
         assertsOf(
@@ -75,7 +74,7 @@ class IntegerValidationPredicate(
     val valueRange: LongRange = 0..Long.MAX_VALUE,
     val digitsRange: IntRange = 0..Int.MAX_VALUE,
     val expected: List<Long> = emptyList()
-) : ValidationPredicate<Long>(required, nullable, tests, depth) {
+) : ValidationPredicate<Long>(INTEGER, required, nullable, tests, depth) {
 
     override fun test(value: Long): AssertWrapper<Long> {
         var int = value
@@ -103,7 +102,7 @@ class JsonObjectValidationPredicate(
     val children: Map<String, AnyValidationPredicate> = emptyMap(),
     val regexChildren: Map<Regex, AnyValidationPredicate> = emptyMap(),
     val any: JsonObjectValidationScope? = null
-) : ValidationPredicate<JSONObject>(required, nullable, tests, depth), TopPredicate<JSONObject> {
+) : ValidationPredicate<JSONObject>(JSON_OBJECT, required, nullable, tests, depth), TopPredicate<JSONObject> {
 
     // checkpoint
     override fun final(value: String): Boolean =
@@ -140,23 +139,22 @@ class JsonObjectValidationPredicate(
         }
 
         if (counter == entries.size)
-            throw JsonObjectCheckpoint.any(depth)
+            throw LocationBasedTracer.any(depth)
     }
 
     private fun testChildrenPredicate(obj: JSONObject, key: String, predicate: AnyValidationPredicate) {
         val isNull = obj.isNull(key)
+        val locator by lazy { jsonObjectLocator(predicate, depth, key) }
 
         // check existence
-        throwIf(!obj.has(key) && predicate.required) { missingRequiredElement(predicate, key, depth) }
+        throwIf(!obj.has(key) && predicate.required) { missingRequiredElement(locator) }
         // check nullability
-        throwIf(isNull && !predicate.nullable) { nullPointer(predicate, key, depth) }
+        throwIf(isNull && !predicate.nullable) { nullPointer(locator) }
 
         if (!isNull) {
-            obj.get(key).let {
-                // check type
-                throwIf(!Validatable.fromPredicate(predicate).actualTypeName.contains(it.javaClass.simpleName)) {
-                    typeMismatch(predicate, key, depth, it)
-                }
+            // check type
+            throwIf(!predicate.type.actualTypeName.contains(obj.get(key).javaClass.simpleName)) {
+                typeMismatch(predicate, key, locator)
             }
 
             when (predicate) {
@@ -183,21 +181,30 @@ class JsonObjectValidationPredicate(
         predicate: ValidationPredicate<T>,
         key: String,
         element: T
-    ) =
+    ): Boolean {
         tests.forEachIndexed { index, (lambdaTest, purpose, isBuiltIn) ->
-            if (!lambdaTest(element))
-                throw JsonObjectCheckpoint.lambda(index + 1, predicate, depth, key, purpose, isBuiltIn)
-        }.let { true }
+            if (!lambdaTest(element)) {
+                val locator = jsonObjectLocator(predicate, depth, key)
+                throw LocationBasedTracer.lambda(index + 1, purpose, isBuiltIn, locator)
+            }
+        }
+        return true
+    }
 
-    private fun testAsserts(asserts: List<AnyAssert>, key: String, predicate: AnyValidationPredicate) =
+    private fun testAsserts(asserts: List<AnyAssert>, key: String, predicate: AnyValidationPredicate): Boolean {
         asserts.forEach {
-            if (!it.test())
+            if (!it.test()) {
+                val locator = jsonObjectLocator(predicate, depth, key)
+
                 throw when (it) {
-                    is RangeAssert<*> -> JsonObjectCheckpoint.range(it, predicate, depth, key)
-                    is ContainAssert -> JsonObjectCheckpoint.contain(it, predicate, depth, key)
-                    is EqualAssert -> JsonObjectCheckpoint.equal(it, predicate, depth, key)
+                    is RangeAssert<*> -> LocationBasedTracer.range(it, locator)
+                    is ContainAssert -> LocationBasedTracer.contain(it, locator)
+                    is EqualAssert -> LocationBasedTracer.equal(it, locator)
                 }
-        }.let { true }
+            }
+        }
+        return true
+    }
 
     override fun toString(): String = Util.reflectionToStringWithStyle(this)
 }
@@ -205,11 +212,13 @@ class JsonObjectValidationPredicate(
 
 // left due to sealed class's constraint
 sealed class ValidationPredicate<T>(
+    override val type: ValidatableType,
     open val required: Boolean = false,
     open val nullable: Boolean = false,
     open val tests: List<LambdaTest<T>> = emptyList(),
     //
     open val depth: Int
-) {
+) : Validatable(type) {
+
     internal abstract fun test(value: T): AssertWrapper<T>
 }

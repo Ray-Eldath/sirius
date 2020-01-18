@@ -1,7 +1,8 @@
 package ray.eldath.sirius.core
 
 import ray.eldath.sirius.config.SiriusValidationConfig
-import ray.eldath.sirius.trace.Tracer.JsonObjectCheckpoint.invalidAssert
+import ray.eldath.sirius.trace.ExceptionLocator
+import ray.eldath.sirius.trace.Tracer.LocationBasedTracer.invalidAssert
 import ray.eldath.sirius.type.LambdaTest
 
 object PredicateBuildInterceptor {
@@ -19,7 +20,7 @@ object PredicateBuildInterceptor {
         val applied = inst.apply(initializer)
 
         inst.isAssertsValid().filterKeys { !it }.map { it.value }.firstOrNull()?.let {
-            throw invalidAssert(scope = inst, key = key, depth = d, reason = it)
+            throw invalidAssert(it, ExceptionLocator.jsonObjectLocator(inst, depth, key))
         }
         return applied.build()
     }

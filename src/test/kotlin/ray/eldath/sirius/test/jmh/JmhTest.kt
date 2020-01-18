@@ -13,7 +13,7 @@ import java.nio.file.Files
 import java.nio.file.Paths
 import java.util.concurrent.TimeUnit
 
-@BenchmarkMode(Mode.Throughput)
+@BenchmarkMode(Mode.AverageTime)
 @Fork(2)
 @Threads(1)
 @Warmup(iterations = 2, time = 4)

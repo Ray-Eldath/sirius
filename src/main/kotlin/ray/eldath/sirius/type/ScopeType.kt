@@ -2,7 +2,7 @@ package ray.eldath.sirius.type
 
 import ray.eldath.sirius.core.ValidationScope
 
-open class BasicOption(require: Boolean, nullable: Boolean) {
+open class BasicOption(type: ValidatableType, require: Boolean, nullable: Boolean) : Validatable(type) {
     var isRequired = require
         private set
 

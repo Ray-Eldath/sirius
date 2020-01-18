@@ -3,67 +3,73 @@ package ray.eldath.sirius.trace
 import ray.eldath.sirius.core.ContainAssert
 import ray.eldath.sirius.core.EqualAssert
 import ray.eldath.sirius.core.RangeAssert
+import ray.eldath.sirius.trace.InvalidSchemaException.MultipleAnyBlockException
+import ray.eldath.sirius.trace.Tracer.LocationBasedTracer.JsonObjectLocator
 import ray.eldath.sirius.type.AnyValidationPredicate
 import ray.eldath.sirius.type.AnyValidationScope
 import ray.eldath.sirius.type.Validatable
 import ray.eldath.sirius.util.toOrdinal
 
-internal object Tracer {
-    internal object AllCheckpoint {
+typealias StringProducer = () -> String
 
-        internal fun multipleAnyBlock(
-            scope: AnyValidationScope,
-            depth: Int
-        ): InvalidSchemaException.MultipleAnyBlockException =
-            InvalidSchemaException.MultipleAnyBlockException(
+interface ExceptionLocator {
+
+    fun locate(): StringProducer
+
+    operator fun invoke() = locate()()
+
+    companion object {
+        internal fun jsonObjectLocator(element: Validatable, depth: Int, key: String) =
+            JsonObjectLocator(element, depth, key)
+    }
+}
+
+internal object Tracer {
+    internal object FreeTracer {
+
+        internal fun multipleAnyBlock(scope: AnyValidationScope, depth: Int): MultipleAnyBlockException =
+            MultipleAnyBlockException(
                 "[${name(scope)}] only one any{} block could be provided at ${depth(depth) + 1}"
             )
     }
 
-    internal object JsonObjectCheckpoint {
+    internal object LocationBasedTracer {
 
-        fun equal(
-            assert: EqualAssert<*>,
-            element: AnyValidationPredicate,
-            depth: Int,
-            key: String
-        ) = InvalidValueException(
-            header("equal", assert.propertyName, element, depth, key) +
+        class JsonObjectLocator(
+            private val element: Validatable,
+            private val depth: Int,
+            private val key: String
+        ) : ExceptionLocator {
+
+            override fun locate(): StringProducer = { "${keyName(element, key)} at ${depth(depth)}" }
+        }
+
+
+        fun equal(assert: EqualAssert<*>, locator: ExceptionLocator) = InvalidValueException(
+            header("equal", assert.propertyName, locator()) +
                     "\n trace: ${assert.actual}(actual) should be ${assert.expected}(expected)"
         )
 
-        fun contain(
-            assert: ContainAssert<*>,
-            element: AnyValidationPredicate,
-            depth: Int,
-            key: String
-        ) = InvalidValueException(
-            header("contain", assert.propertyName, element, depth, key) +
+        fun contain(assert: ContainAssert<*>, locator: ExceptionLocator) = InvalidValueException(
+            header("contain", assert.propertyName, locator()) +
                     "\n trace: ${assert.element}(actual) should be contained in ${assert.container}(expected)"
         )
 
-        fun range(
-            assert: RangeAssert<*>,
-            element: AnyValidationPredicate,
-            depth: Int,
-            key: String
-        ): InvalidValueException {
+        fun range(assert: RangeAssert<*>, locator: ExceptionLocator): InvalidValueException {
             val actual = assert.actual
             val header = if (actual.start == actual.endInclusive) actual.start.toString() else actual.toString()
 
             return InvalidValueException(
-                header("range", assert.propertyName, element, depth, key) +
+                header("range", assert.propertyName, locator()) +
                         "\n trace: $header(actual) should be contained in ${assert.bigger}(expected)"
             )
         }
 
         fun lambda(
             index: Int,
-            element: AnyValidationPredicate,
-            depth: Int,
-            key: String,
             purpose: String = "",
-            isBuiltIn: Boolean = false
+            isBuiltIn: Boolean = false,
+            locator: ExceptionLocator
         ): InvalidValueException {
             val propertyName = (if (isBuiltIn) "[built-in " else "[") + "lambda test]"
 
@@ -82,7 +88,7 @@ internal object Tracer {
                 }
             }
 
-            return InvalidValueException(header("lambda", propertyName, element, depth, key) + trace.toString())
+            return InvalidValueException(header("lambda", propertyName, locator()) + trace.toString())
         }
 
         fun any(depth: Int) =
@@ -93,38 +99,34 @@ internal object Tracer {
         private fun header(
             type: String,
             propertyName: String,
-            element: AnyValidationPredicate,
-            depth: Int,
-            key: String
+            location: String
         ): String {
-            val t = keyName(element, key)
-            val d = depth(depth)
             val p = if (propertyName.isNotEmpty()) " of property \"$propertyName\"" else ""
-            return "[JsonObject] $type validation failed$p for JsonObject element at $t at $d"
+            return "[JsonObject] $type validation failed$p for JsonObject element at $location"
         }
 
-        internal fun typeMismatch(element: AnyValidationPredicate, key: String, depth: Int, actual: Any) =
-            Validatable.fromPredicate(element).actualType.javaObjectType.simpleName.let {
+        internal fun typeMismatch(element: AnyValidationPredicate, actual: Any, locator: ExceptionLocator) =
+            element.type.actualType.javaObjectType.simpleName.let {
                 ValidationException.TypeMismatchException(
-                    "[JsonObject] type mismatch at ${keyName(element, key)} at ${depth(depth)}" +
+                    "[JsonObject] type mismatch at ${locator()}" +
                             "\n trace: ${actual.javaClass.simpleName}(actual) should be $it(expected)"
                 )
             }
 
-        internal fun invalidAssert(scope: AnyValidationScope, key: String, depth: Int, reason: String = "") =
+        internal fun invalidAssert(reason: String = "", locator: ExceptionLocator) =
             InvalidSchemaException.InvalidAssertException(
-                "[JsonObject] assert validation failed at ${keyName(scope, key)} at ${depth(depth)}" +
+                "[JsonObject] assert validation failed at ${locator()}" +
                         if (reason.isNotEmpty()) "\n trace: $reason" else ""
             )
 
-        internal fun missingRequiredElement(element: AnyValidationPredicate, key: String, depth: Int) =
+        internal fun missingRequiredElement(locator: ExceptionLocator) =
             ValidationException.MissingRequiredElementException(
-                "[JsonObject] missing required element ${keyName(element, key)} at ${depth(depth)}"
+                "[JsonObject] missing required element ${locator()}"
             )
 
-        internal fun nullPointer(element: AnyValidationPredicate, key: String, depth: Int) =
+        internal fun nullPointer(locator: ExceptionLocator) =
             InvalidValueException.NullPointerException(
-                "[JsonObject] non-null element ${keyName(element, key)} at ${depth(depth)} is set to `null`"
+                "[JsonObject] non-null element ${locator()} is set to `null`"
             )
 
         private fun keyName(pOrs: Any, key: String): String {
@@ -142,7 +144,7 @@ internal object Tracer {
             "[root]"
         else "[$depth] f${if (depth == 1) "oo" else "ee"}t from root"
 
-    private fun name(scope: AnyValidationScope) = Validatable.fromScope(scope).displayName
+    private fun name(scope: AnyValidationScope) = scope.type.displayName
 
-    private fun name(predicate: AnyValidationPredicate) = Validatable.fromPredicate(predicate).displayName
+    private fun name(predicate: AnyValidationPredicate) = predicate.type.displayName
 }

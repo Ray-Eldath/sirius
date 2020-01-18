@@ -10,7 +10,7 @@
 
 **Now comes the bigger problems should be addressed first...**
  - [ ] Unit test
- - [ ] Refactor: exceptions and trace
+ - [X] Refactor: exceptions and trace
  - [ ] Refactor: architecture, lazify the build procedure
 
 ---
@@ -28,7 +28,7 @@
    - [X] `null`
  - [X] Documentation for API with [Dokka](https://github.com/Kotlin/dokka)
  - [X] Validation configuration
- - [ ] JUnit test
+ - [ ] Unit test
  - [X] Continuous Integration (CI)
  - [ ] (?) SemVer & SemRelease
 
