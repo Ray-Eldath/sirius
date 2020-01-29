@@ -21,7 +21,7 @@ dependencies {
     implementation 'org.jetbrains.kotlin:kotlin-stdlib-jdk8'
 
     // https://mvnrepository.com/artifact/org.junit.jupiter/junit-jupiter
-    testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter', version: '5.5.1'
+    testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter', version: '5.6.0'
     // https://mvnrepository.com/artifact/org.openjdk.jmh/jmh-core
     testImplementation group: 'org.openjdk.jmh', name: 'jmh-core', version: jmhVersion
     // https://mvnrepository.com/artifact/org.openjdk.jmh/jmh-generator-annprocess
