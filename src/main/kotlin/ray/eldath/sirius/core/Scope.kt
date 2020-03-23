@@ -54,9 +54,9 @@ class JsonObjectValidationScope(override val depth: Int, private val config: Sir
     //
 
     /**
-     * Two ways to denote a regex key matching pattern:
+     * There are two ways to denote a regex key matching pattern:
      *  - Any string prefixed with `+`.
-     *  - Construct `Regex` explicitly. (exp. `Regex("...") string { ... }`)
+     *  - Construct with `Regex` explicitly. (exp. `Regex("...") string { ... }`)
      */
     operator fun @receiver: Language("RegExp") String.unaryPlus() = Regex(this)
 
