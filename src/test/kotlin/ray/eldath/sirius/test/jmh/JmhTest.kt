@@ -89,7 +89,7 @@ open class JmhTest {
 
                 "789" jsonObject {
                     any {
-                        "t" string { expected("something", "nothing") }
+                        "t".string("something", "nothing")
                         "T" decimal {}
                     }
                 }
@@ -98,7 +98,7 @@ open class JmhTest {
                     "anything" jsonObject {
                         "anything" jsonObject {
                             "anything" jsonObject {
-                                "anything" string { expected("anything", "nothing") }
+                                "anything".string("anything", "nothing")
                             }
                         }
                     }
