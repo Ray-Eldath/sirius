@@ -17,27 +17,48 @@ import ray.eldath.sirius.util.StringContentPattern.*
 private const val max = Int.MAX_VALUE
 private val maxRange = 0..max
 
-class JsonObjectValidationScope(override val depth: Int, private val config: SiriusValidationConfig) :
+class JsonObjectValidationScope(override val depth: Int, @PublishedApi internal val config: SiriusValidationConfig) :
     ValidationScopeWithLength<JSONObject, JsonObjectValidationPredicate>(JSON_OBJECT, depth, config) {
 
-    private val children = hashMapOf<String, AnyValidationPredicate>()
-    private val regexChildren = hashMapOf<Regex, AnyValidationPredicate>()
-    private var _any: JsonObjectValidationScope? = null
+    @PublishedApi
+    internal val children = hashMapOf<String, AnyValidationPredicate>()
 
-    infix fun String.jsonObject(block: JsonObjectValidationScope.() -> Unit) {
+    @PublishedApi
+    internal val regexChildren = hashMapOf<Regex, AnyValidationPredicate>()
+
+    @PublishedApi
+    internal var anyScope: JsonObjectValidationScope? = null
+
+    inline infix fun String.jsonObject(block: JsonObjectValidationScope.() -> Unit) {
         children += this to jsonObjectIntercept(block, key = this, depth = depth, config = config)
     }
 
-    infix fun String.string(block: StringValidationScope.() -> Unit) {
+    inline infix fun String.string(block: StringValidationScope.() -> Unit) {
         children += this to jsonObjectIntercept(block, key = this, depth = depth, config = config)
     }
 
-    infix fun String.integer(block: IntegerValidationScope.() -> Unit) {
+    infix fun String.string(expected: List<String>) {
+        string { expected(expected) }
+    }
+
+    infix fun String.stringIgnoreCase(expected: List<String>) {
+        string { expected(expected, ignoreCase = true) }
+    }
+
+    inline infix fun String.integer(block: IntegerValidationScope.() -> Unit) {
         children += this to jsonObjectIntercept(block, key = this, depth = depth, config = config)
     }
 
-    infix fun String.decimal(block: DecimalValidationScope.() -> Unit) {
+    infix fun String.integer(expected: List<Long>) {
+        integer { expected(expected) }
+    }
+
+    inline infix fun String.decimal(block: DecimalValidationScope.() -> Unit) {
         children += this to jsonObjectIntercept(block, key = this, depth = depth, config = config)
+    }
+
+    fun String.decimal(expected: List<Double>) {
+        decimal { expected(expected) }
     }
 
     /**
@@ -47,7 +68,7 @@ class JsonObjectValidationScope(override val depth: Int, private val config: Sir
         boolean { expected = excepted }
     }
 
-    infix fun String.boolean(block: BooleanValidationScope.() -> Unit) {
+    inline infix fun String.boolean(block: BooleanValidationScope.() -> Unit) {
         children += this to jsonObjectIntercept(block, key = this, depth = depth, config = config)
     }
 
@@ -60,21 +81,36 @@ class JsonObjectValidationScope(override val depth: Int, private val config: Sir
      */
     operator fun @receiver: Language("RegExp") String.unaryPlus() = Regex(this)
 
-    infix fun Regex.jsonObject(block: JsonObjectValidationScope.() -> Unit) {
+    inline infix fun Regex.jsonObject(block: JsonObjectValidationScope.() -> Unit) {
         regexChildren += this to jsonObjectIntercept(block, key = this.toString(), depth = depth, config = config)
     }
 
-    infix fun Regex.string(block: StringValidationScope.() -> Unit) {
+    inline infix fun Regex.string(block: StringValidationScope.() -> Unit) {
         regexChildren += this to jsonObjectIntercept(block, key = this.toString(), depth = depth, config = config)
     }
 
-    infix fun Regex.integer(block: IntegerValidationScope.() -> Unit) {
+    infix fun Regex.string(expected: List<String>) {
+        string { expected(expected) }
+    }
+
+    infix fun Regex.stringIgnoreCase(expected: List<String>) {
+        string { expected(expected, ignoreCase = true) }
+    }
+
+    inline infix fun Regex.integer(block: IntegerValidationScope.() -> Unit) {
         regexChildren += this to jsonObjectIntercept(block, key = this.toString(), depth = depth, config = config)
     }
 
+    infix fun Regex.integer(expected: List<Long>) {
+        integer { expected(expected) }
+    }
 
-    infix fun Regex.decimal(block: DecimalValidationScope.() -> Unit) {
+    inline infix fun Regex.decimal(block: DecimalValidationScope.() -> Unit) {
         regexChildren += this to jsonObjectIntercept(block, key = this.toString(), depth = depth, config = config)
+    }
+
+    infix fun Regex.decimal(expected: List<Double>) {
+        decimal { expected(expected) }
     }
 
     infix fun Regex.boolean(excepted: Boolean) {
@@ -85,12 +121,12 @@ class JsonObjectValidationScope(override val depth: Int, private val config: Sir
         regexChildren += this to jsonObjectIntercept(block, key = this.toString(), depth = depth, config = config)
     }
 
-    fun any(block: JsonObjectValidationScope.() -> Unit) {
-        if (_any != null)
+    inline fun any(block: JsonObjectValidationScope.() -> Unit) {
+        if (anyScope != null)
             throw multipleAnyBlock(this, depth)
         else {
-            _any = JsonObjectValidationScope(depth + 1, config)
-            _any?.apply(block)
+            anyScope = JsonObjectValidationScope(depth + 1, config)
+            anyScope?.apply(block)
         }
     }
 
@@ -114,7 +150,7 @@ class JsonObjectValidationScope(override val depth: Int, private val config: Sir
             required = isRequired,
             nullable = isNullable,
             depth = depth,
-            any = _any
+            any = anyScope
         )
 
     override fun isAssertsValid(): Map<Boolean, String> = mapOf(isRangeValid())
@@ -148,10 +184,13 @@ class DecimalValidationScope(override val depth: Int, config: SiriusValidationCo
     /**
      * @see [IntegerValidationScope.expected]
      */
-    fun expected(vararg expected: Double) {
+    fun expected(vararg expected: Double) =
+        expected(expected.toList())
+
+    fun expected(expected: List<Double>) {
         if (expected.size == 1)
             expectedList.clear()
-        expectedList += expected.toTypedArray()
+        expectedList += expected
     }
 
     override fun build(): DecimalValidationPredicate =
@@ -181,10 +220,13 @@ class IntegerValidationScope(override val depth: Int, config: SiriusValidationCo
      *
      * @param expected list of expected value
      */
-    fun expected(vararg expected: Long) {
+    fun expected(vararg expected: Long) =
+        expected(expected.toList())
+
+    fun expected(expected: List<Long>) {
         if (expected.size == 1)
             expectedList.clear()
-        expectedList += expected.toTypedArray()
+        expectedList += expected
     }
 
     override fun build(): IntegerValidationPredicate =
@@ -241,7 +283,10 @@ class StringValidationScope(override val depth: Int, private val config: SiriusV
      * @param expected list of expected strings.
      * @param ignoreCase ignore cases for *every* given expected string.
      */
-    fun expected(vararg expected: String, ignoreCase: Boolean = false) {
+    fun expected(vararg expected: String, ignoreCase: Boolean = false) =
+        expected(expected.toList(), ignoreCase)
+
+    fun expected(expected: List<String>, ignoreCase: Boolean = false) {
         expectedIgnoreCase = ignoreCase
         if (expected.size == 1)
             expectedList.clear()
@@ -414,7 +459,10 @@ sealed class ValidationScope<E, T : AnyValidationPredicate>(
 
     fun buildLambdaTests() = lambdaTests.toList()
 
+    @PublishedApi
     internal abstract fun build(): T
+
+    @PublishedApi
     internal open fun isAssertsValid(): Map<Boolean, String> = mapOf(true to "")
 }
 
