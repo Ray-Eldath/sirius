@@ -9,7 +9,7 @@ jobs:
             - restore_cache:
                 key: v1-gradle-wrapper-{{ checksum "gradle/wrapper/gradle-wrapper.properties" }}
             - restore_cache:
-                key: v1-gradle-cache-{{ checksum "build.gradle" }}
+                key: v1-gradle-cache-{{ checksum "build.gradle.kts" }}
             - run:
                 name: Chmod Permissions
                 command: sudo chmod +x ./gradlew
@@ -26,7 +26,7 @@ jobs:
             - save_cache:
                 paths:
                     - ~/.gradle/caches
-                key: v1-gradle-cache-{{ checksum "build.gradle" }}
+                key: v1-gradle-cache-{{ checksum "build.gradle.kts" }}
     build:
         docker:
             - image: circleci/openjdk:11.0.4-jdk-stretch
@@ -35,7 +35,7 @@ jobs:
             - restore_cache:
                 key: v1-gradle-wrapper-{{ checksum "gradle/wrapper/gradle-wrapper.properties" }}
             - restore_cache:
-                key: v1-gradle-cache-{{ checksum "build.gradle" }}
+                key: v1-gradle-cache-{{ checksum "build.gradle.kts" }}
             - run:
                 name: Chmod Permissions
                 command: sudo chmod +x ./gradlew
@@ -50,7 +50,7 @@ jobs:
             - restore_cache:
                 key: v1-gradle-wrapper-{{ checksum "gradle/wrapper/gradle-wrapper.properties" }}
             - restore_cache:
-                key: v1-gradle-cache-{{ checksum "build.gradle" }}
+                key: v1-gradle-cache-{{ checksum "build.gradle.kts" }}
             - run:
                 name: Chmod Permissions
                 command: sudo chmod +x ./gradlew
