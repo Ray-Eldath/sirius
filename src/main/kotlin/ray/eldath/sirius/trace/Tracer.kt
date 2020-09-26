@@ -19,26 +19,22 @@ interface ExceptionLocator {
     operator fun invoke() = locate()()
 
     companion object {
-        @PublishedApi
+
         internal fun jsonObjectLocator(element: Validatable, depth: Int, key: String) =
             JsonObjectLocator(element, depth, key)
     }
 }
 
-@PublishedApi
 internal object Tracer {
 
-    @PublishedApi
     internal object FreeTracer {
 
-        @PublishedApi
         internal fun multipleAnyBlock(scope: AnyValidationScope, depth: Int): MultipleAnyBlockException =
             MultipleAnyBlockException(
                 "[${name(scope)}] only one any{} block could be provided at ${depth(depth) + 1}"
             )
     }
 
-    @PublishedApi
     internal object LocationBasedTracer {
 
         class JsonObjectLocator(
@@ -119,7 +115,6 @@ internal object Tracer {
                 )
             }
 
-        @PublishedApi
         internal fun invalidAssert(reason: String = "", locator: ExceptionLocator) =
             InvalidSchemaException.InvalidAssertException(
                 "[JsonObject] assert validation failed at ${locator()}" +

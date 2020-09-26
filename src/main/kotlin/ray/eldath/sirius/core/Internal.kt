@@ -6,7 +6,6 @@ import ray.eldath.sirius.trace.Tracer.LocationBasedTracer.invalidAssert
 import ray.eldath.sirius.type.LambdaTest
 
 object PredicateBuildInterceptor {
-    @PublishedApi
     internal inline fun <E, reified T : ValidationScope<*, out E>> jsonObjectIntercept(
         initializer: T.() -> Unit,
         key: String,
