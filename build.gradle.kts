@@ -23,7 +23,7 @@ dependencies {
     // https://mvnrepository.com/artifact/org.json/json
     implementation("org.json:json:20200518")
     // https://mvnrepository.com/artifact/org.apache.commons/commons-lang3
-    implementation("org.apache.commons:commons-lang3:3.9")
+    implementation("org.apache.commons:commons-lang3:3.10")
 
     implementation(kotlin("stdlib-jdk8"))
 }
