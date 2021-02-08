@@ -15,7 +15,7 @@ val jmhVersion = "1.25.2"
 
 dependencies {
     // https://mvnrepository.com/artifact/org.junit.jupiter/junit-jupiter
-    testImplementation("org.junit.jupiter:junit-jupiter:5.6.1")
+    testImplementation("org.junit.jupiter:junit-jupiter:5.7.1")
     // https://mvnrepository.com/artifact/org.openjdk.jmh/jmh-core
     testImplementation("org.openjdk.jmh:jmh-core:$jmhVersion")
     // https://mvnrepository.com/artifact/org.openjdk.jmh/jmh-generator-annprocess
