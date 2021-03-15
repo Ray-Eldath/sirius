@@ -21,7 +21,7 @@ dependencies {
     // https://mvnrepository.com/artifact/org.openjdk.jmh/jmh-generator-annprocess
     kaptTest("org.openjdk.jmh:jmh-generator-annprocess:$jmhVersion")
     // https://mvnrepository.com/artifact/org.json/json
-    implementation("org.json:json:20200518")
+    implementation("org.json:json:20210307")
     // https://mvnrepository.com/artifact/org.apache.commons/commons-lang3
     implementation("org.apache.commons:commons-lang3:3.9")
 
