@@ -11,7 +11,7 @@ plugins {
 group = "ray.eldath"
 version = "0.0.1"
 
-val jmhVersion = "1.25.2"
+val jmhVersion = "1.29"
 
 dependencies {
     // https://mvnrepository.com/artifact/org.junit.jupiter/junit-jupiter
